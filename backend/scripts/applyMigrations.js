@@ -52,7 +52,7 @@ async function main() {
     await connection.end();
   }
 }
-
+// Run the main function and catch any errors
 main().catch((error) => {
   console.error("Migration failed:", error.message);
   process.exit(1);
