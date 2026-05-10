@@ -367,7 +367,7 @@ function Landing() {
           </div>
           <FooterCol title="Programme" links={[["Browse events", "/events"], ["Categories", "/events"], ["Schedule", "/events"]]} />
           <FooterCol title="Account" links={[["Sign in", "/login"], ["Register", "/signup"]]} />
-          <FooterCol title="More" links={[["Sponsors", "/"], ["About", "/"]]} />
+          <FooterCol title="More" links={[["Sponsors", "/sponsors"], ["About", "/about"]]} />
         </div>
         <div className="mt-12 pt-6 border-t border-border flex flex-wrap justify-between items-center gap-4 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
           <p>© MMXXVI SOFTEC · FAST-NUCES Lahore</p>
@@ -403,8 +403,8 @@ function PublicNav() {
         </Link>
         <nav className="hidden md:flex items-center gap-8 text-sm">
           <Link to="/events" className="text-foreground/80 hover:text-primary transition-colors">Programme</Link>
-          <a href="#" className="text-foreground/80 hover:text-primary transition-colors">Sponsors</a>
-          <a href="#" className="text-foreground/80 hover:text-primary transition-colors">About</a>
+          <Link to="/sponsors" className="text-foreground/80 hover:text-primary transition-colors">Sponsors</Link>
+          <Link to="/about" className="text-foreground/80 hover:text-primary transition-colors">About</Link>
         </nav>
         <div className="flex items-center gap-3">
           <ThemeSwitch />

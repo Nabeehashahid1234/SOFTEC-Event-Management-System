@@ -507,45 +507,24 @@ DELIMITER //
 DROP PROCEDURE IF EXISTS sp_get_leaderboard//
 CREATE PROCEDURE sp_get_leaderboard(IN p_event_id INT)
 BEGIN
-  IF EXISTS (SELECT 1 FROM judging WHERE event_id = p_event_id) THEN
+  SELECT
+    ranked.rank,
+    ranked.participant_id,
+    ranked.participant_name AS name,
+    ranked.average_score AS score
+  FROM (
     SELECT
-      ranked.rank,
-      ranked.participant_id,
-      ranked.participant_name AS name,
-      ranked.average_score AS score
-    FROM (
-      SELECT
-        p.participant_id,
-        u.name AS participant_name,
-        ROUND(AVG(j.score), 2) AS average_score,
-        ROW_NUMBER() OVER (ORDER BY AVG(j.score) DESC, COUNT(j.judging_id) DESC, p.participant_id ASC) AS rank
-      FROM judging j
-      JOIN participants p ON p.participant_id = j.participant_id
-      JOIN users u ON u.user_id = p.user_id
-      WHERE j.event_id = p_event_id
-      GROUP BY p.participant_id, u.name
-    ) AS ranked
-    ORDER BY ranked.rank;
-  ELSE
-    SELECT
-      ranked.rank,
-      ranked.participant_id,
-      ranked.participant_name AS name,
-      ranked.average_score AS score
-    FROM (
-      SELECT
-        p.participant_id,
-        u.name AS participant_name,
-        ROUND(AVG(s.score), 2) AS average_score,
-        ROW_NUMBER() OVER (ORDER BY AVG(s.score) DESC, COUNT(s.score_id) DESC, p.participant_id ASC) AS rank
-      FROM scores s
-      JOIN participants p ON p.participant_id = s.participant_id
-      JOIN users u ON u.user_id = p.user_id
-      WHERE s.event_id = p_event_id
-      GROUP BY p.participant_id, u.name
-    ) AS ranked
-    ORDER BY ranked.rank;
-  END IF;
+      p.participant_id,
+      u.name AS participant_name,
+      ROUND(AVG(j.score), 2) AS average_score,
+      ROW_NUMBER() OVER (ORDER BY AVG(j.score) DESC, COUNT(j.judging_id) DESC, p.participant_id ASC) AS rank
+    FROM judging j
+    JOIN participants p ON p.participant_id = j.participant_id
+    JOIN users u ON u.user_id = p.user_id
+    WHERE j.event_id = p_event_id
+    GROUP BY p.participant_id, u.name
+  ) AS ranked
+  ORDER BY ranked.rank;
 END//
 
 DROP PROCEDURE IF EXISTS sp_assign_unassigned_events//

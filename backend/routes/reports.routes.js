@@ -6,7 +6,7 @@ const { requireRole } = require("../middleware/rbac");
 
 const router = express.Router();
 
-router.get("/event-participation", authRequired, requireRole(["admin"]), async (_req, res, next) => {
+router.get("/event-participation", authRequired, requireRole(["admin", "organizer"]), async (_req, res, next) => {
   try {
     // Q1: LEFT JOIN + GROUP BY + COUNT
     const [rows] = await pool.query(
@@ -29,7 +29,7 @@ router.get("/event-participation", authRequired, requireRole(["admin"]), async (
   }
 });
 
-router.get("/high-quality-events", authRequired, requireRole(["admin"]), async (_req, res, next) => {
+router.get("/high-quality-events", authRequired, requireRole(["admin", "organizer"]), async (_req, res, next) => {
   try {
     const [rows] = await pool.query("SELECT * FROM high_quality_events ORDER BY avg_score DESC");
     return res.json({ success: true, data: rows });
@@ -38,7 +38,7 @@ router.get("/high-quality-events", authRequired, requireRole(["admin"]), async (
   }
 });
 
-router.get("/venue-utilization", authRequired, requireRole(["admin"]), async (_req, res, next) => {
+router.get("/venue-utilization", authRequired, requireRole(["admin", "organizer"]), async (_req, res, next) => {
   try {
     const [rows] = await pool.query("SELECT * FROM venue_utilization_stats ORDER BY events_hosted DESC");
     return res.json({ success: true, data: rows });
