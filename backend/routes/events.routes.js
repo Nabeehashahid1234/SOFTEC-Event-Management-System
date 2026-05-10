@@ -3,22 +3,31 @@ const { body, param, query, validationResult } = require("express-validator");
 const pool = require("../config/db");
 const { authRequired } = require("../middleware/auth");
 const { requireRole } = require("../middleware/rbac");
-const {
-  createEvent,
-  autoAssignJudge,
-  updateEventStatus,
-  refreshEventStatus,
-} = require("../services/event.service");
 
 const router = express.Router();
 
+async function assignLeastBusyJudge(connection, eventId) {
+  const [[judge]] = await connection.query(
+    `
+    SELECT j.judge_id
+    FROM judges j
+    LEFT JOIN event_judges ej ON ej.judge_id = j.judge_id
+    GROUP BY j.judge_id, j.assigned_events_count
+    ORDER BY j.assigned_events_count ASC, COUNT(ej.event_judge_id) ASC, j.judge_id ASC
+    LIMIT 1
+    `
+  );
+
+  if (!judge) return null;
+
+  await connection.query("INSERT IGNORE INTO event_judges (event_id, judge_id) VALUES (?, ?)", [eventId, judge.judge_id]);
+  await connection.query("UPDATE judges SET assigned_events_count = assigned_events_count + 1 WHERE judge_id = ?", [judge.judge_id]);
+  return judge.judge_id;
+}
+
 router.get(
   "/",
-  [
-    query("category").optional().isString(),
-    query("from").optional().isISO8601(),
-    query("to").optional().isISO8601(),
-  ],
+  [query("category").optional().isString(), query("from").optional().isISO8601(), query("to").optional().isISO8601()],
   async (req, res, next) => {
     try {
       const errors = validationResult(req);
@@ -41,7 +50,8 @@ router.get(
         params.push(String(to).slice(0, 10));
       }
 
-      const sql = `
+      const [rows] = await pool.query(
+        `
         SELECT
           e.event_id,
           e.event_name,
@@ -49,28 +59,19 @@ router.get(
           e.category,
           e.event_date,
           e.max_participants,
-          COALESCE(SUM(CASE WHEN r.status = 'confirmed' THEN 1 ELSE 0 END), 0) AS registered_participants,
+          e.registered_participants,
           e.registration_fee,
-<<<<<<< HEAD
-          e.prize_pool,
-          e.sponsorship_total,
-          e.total_prize_pool,
-          e.event_status,
-          e.assigned_judge_id,
-=======
           COALESCE(e.prize_pool, 0) AS prize_pool,
->>>>>>> bd4ef49a5689b2be6e725836cf4b366c52976df5
           v.venue_id,
           v.venue_name
         FROM events e
-        LEFT JOIN registrations r ON r.event_id = e.event_id
         LEFT JOIN venues v ON v.venue_id = e.venue_id
         ${where.length ? "WHERE " + where.join(" AND ") : ""}
-        GROUP BY e.event_id, v.venue_id, v.venue_name
         ORDER BY e.event_date ASC
-      `;
+        `,
+        params
+      );
 
-      const [rows] = await pool.query(sql, params);
       return res.json({ success: true, data: rows });
     } catch (err) {
       return next(err);
@@ -78,55 +79,48 @@ router.get(
   }
 );
 
-router.get(
-  "/:id",
-  [param("id").isInt()],
-  async (req, res, next) => {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) return res.status(400).json({ success: false, error: "Invalid id" });
+router.get("/:id", [param("id").isInt()], async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ success: false, error: "Invalid id" });
 
-      const eventId = Number(req.params.id);
-      const [events] = await pool.query(
-        `
-        SELECT
-          e.*, 
-          v.venue_name,
-          v.capacity AS venue_capacity,
-          j.user_id AS assigned_judge_id,
-          j.name AS assigned_judge_name,
-          j.email AS assigned_judge_email
-        FROM events e
-        LEFT JOIN venues v ON v.venue_id = e.venue_id
-        LEFT JOIN users j ON j.user_id = e.assigned_judge_id
-        WHERE e.event_id = ?
-        LIMIT 1
-        `,
-        [eventId]
-      );
+    const eventId = Number(req.params.id);
+    const [events] = await pool.query(
+      `
+      SELECT e.*, v.venue_name, v.capacity AS venue_capacity
+      FROM events e
+      LEFT JOIN venues v ON v.venue_id = e.venue_id
+      WHERE e.event_id = ?
+      LIMIT 1
+      `,
+      [eventId]
+    );
 
-      if (!events.length) return res.status(404).json({ success: false, error: "Event not found" });
+    if (!events.length) return res.status(404).json({ success: false, error: "Event not found" });
 
-      const [rounds] = await pool.query(
-        "SELECT * FROM event_rounds WHERE event_id = ? ORDER BY round_date ASC",
-        [eventId]
-      );
+    const [rounds] = await pool.query("SELECT * FROM event_rounds WHERE event_id = ? ORDER BY round_date ASC", [eventId]);
+    const [leaderboard] = await pool.query(
+      `
+      SELECT
+        p.participant_id,
+        u.name AS name,
+        ROUND(AVG(jg.score), 2) AS avg_score
+      FROM judging jg
+      JOIN participants p ON p.participant_id = jg.participant_id
+      JOIN users u ON u.user_id = p.user_id
+      WHERE jg.event_id = ?
+      GROUP BY p.participant_id, u.name
+      ORDER BY avg_score DESC, u.name ASC
+      LIMIT 25
+      `,
+      [eventId]
+    );
 
-      const [leaderboard] = await pool.query("CALL sp_get_leaderboard(?)", [eventId]);
-
-      return res.json({
-        success: true,
-        data: {
-          event: events[0],
-          rounds,
-          leaderboard: leaderboard[0] || [],
-        },
-      });
-    } catch (err) {
-      return next(err);
-    }
+    return res.json({ success: true, data: { event: events[0], rounds, leaderboard } });
+  } catch (err) {
+    return next(err);
   }
-);
+});
 
 router.post(
   "/",
@@ -137,64 +131,54 @@ router.post(
     body("description").optional().isString(),
     body("category").isIn(["Tech Events", "Business Competitions", "Gaming Tournaments", "General Events"]),
     body("event_date").isISO8601(),
-    body("start_time").optional().isString().matches(/^([01]\d|2[0-3]):([0-5]\d)$/),
-    body("end_time").optional().isString().matches(/^([01]\d|2[0-3]):([0-5]\d)$/),
     body("max_participants").isInt({ min: 1 }),
     body("venue_id").optional({ nullable: true }).isInt(),
     body("registration_fee").isFloat({ min: 0 }),
     body("prize_pool").optional().isFloat({ min: 0 }),
   ],
   async (req, res, next) => {
+    const conn = await pool.getConnection();
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) return res.status(400).json({ success: false, error: errors.array()[0].msg });
 
       const b = req.body;
-      const payload = {
-        event_name: b.event_name,
-        description: b.description || null,
-        category: b.category,
-        event_date: String(b.event_date).slice(0, 10),
-        start_time: b.start_time || null,
-        end_time: b.end_time || null,
-        max_participants: b.max_participants,
-        venue_id: b.venue_id ?? null,
-        registration_fee: b.registration_fee,
-        prize_pool: b.prize_pool ?? 0,
-      };
+      await conn.beginTransaction();
 
-<<<<<<< HEAD
-      const result = await createEvent(payload, req.user.user_id);
-      return res.status(201).json({ success: true, data: result });
-=======
-      // Attempt automatic judge assignment: pick least-busy judge
+      const [result] = await conn.query(
+        `
+        INSERT INTO events (event_name, description, category, event_date, max_participants, venue_id, organizer_id, registration_fee, prize_pool, sponsorship_total)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `,
+        [
+          b.event_name,
+          b.description || null,
+          b.category,
+          String(b.event_date).slice(0, 10),
+          b.max_participants,
+          b.venue_id ?? null,
+          req.user.user_id,
+          b.registration_fee,
+          b.prize_pool ?? 0,
+          0,
+        ]
+      );
+
+      let assignedJudgeId = null;
       try {
-        const [[leastBusy]] = await pool.query(
-          `
-          SELECT j.judge_id, COUNT(ej.event_judge_id) AS assigned_count
-          FROM judges j
-          LEFT JOIN event_judges ej ON ej.judge_id = j.judge_id
-          GROUP BY j.judge_id
-          ORDER BY assigned_count ASC, j.judge_id ASC
-          LIMIT 1
-          `
-        );
-
-        if (leastBusy && leastBusy.judge_id) {
-          await pool.query("INSERT IGNORE INTO event_judges (event_id, judge_id) VALUES (?, ?)", [result.insertId, leastBusy.judge_id]);
-          await pool.query("UPDATE judges SET assigned_events_count = assigned_events_count + 1 WHERE judge_id = ?", [leastBusy.judge_id]);
-        }
+        assignedJudgeId = await assignLeastBusyJudge(conn, result.insertId);
       } catch (assignErr) {
         console.error("Automatic judge assignment failed:", assignErr);
       }
 
-      return res.status(201).json({ success: true, data: { event_id: result.insertId } });
->>>>>>> bd4ef49a5689b2be6e725836cf4b366c52976df5
+      await conn.commit();
+      return res.status(201).json({ success: true, data: { event_id: result.insertId, assigned_judge_id: assignedJudgeId } });
     } catch (err) {
-      if (err.code === "VENUE_CONFLICT") {
-        return res.status(409).json({ success: false, error: err.message });
-      }
+      await conn.rollback();
+      if (err.code === "ER_DUP_ENTRY") return res.status(409).json({ success: false, error: "Venue already booked for this date" });
       return next(err);
+    } finally {
+      conn.release();
     }
   }
 );
@@ -209,13 +193,10 @@ router.patch(
     body("description").optional({ nullable: true }).isString(),
     body("category").optional().isIn(["Tech Events", "Business Competitions", "Gaming Tournaments", "General Events"]),
     body("event_date").optional().isISO8601(),
-    body("start_time").optional().isString().matches(/^([01]\d|2[0-3]):([0-5]\d)$/),
-    body("end_time").optional().isString().matches(/^([01]\d|2[0-3]):([0-5]\d)$/),
     body("max_participants").optional().isInt({ min: 1 }),
     body("venue_id").optional({ nullable: true }).isInt(),
     body("registration_fee").optional().isFloat({ min: 0 }),
     body("prize_pool").optional().isFloat({ min: 0 }),
-    body("event_status").optional().isIn(["draft","open","full","ongoing","completed","cancelled"]),
   ],
   async (req, res, next) => {
     try {
@@ -225,24 +206,11 @@ router.patch(
       const eventId = Number(req.params.id);
       const fields = [];
       const params = [];
-      const allowed = [
-        "event_name",
-        "description",
-        "category",
-        "event_date",
-        "start_time",
-        "end_time",
-        "max_participants",
-        "venue_id",
-        "registration_fee",
-        "prize_pool",
-        "event_status",
-      ];
+      const allowed = ["event_name", "description", "category", "event_date", "max_participants", "venue_id", "registration_fee", "prize_pool"];
       for (const key of allowed) {
         if (Object.prototype.hasOwnProperty.call(req.body, key)) {
           fields.push(`${key} = ?`);
-          if (key === "event_date") params.push(String(req.body[key]).slice(0, 10));
-          else params.push(req.body[key]);
+          params.push(key === "event_date" ? String(req.body[key]).slice(0, 10) : req.body[key]);
         }
       }
       if (!fields.length) return res.status(400).json({ success: false, error: "No fields to update" });
@@ -251,10 +219,6 @@ router.patch(
       const [result] = await pool.query(`UPDATE events SET ${fields.join(", ")} WHERE event_id = ?`, params);
       if (!result.affectedRows) return res.status(404).json({ success: false, error: "Event not found" });
 
-      if (req.body.max_participants || req.body.event_status) {
-        await refreshEventStatus(eventId);
-      }
-
       return res.json({ success: true, data: { event_id: eventId } });
     } catch (err) {
       return next(err);
@@ -262,48 +226,30 @@ router.patch(
   }
 );
 
-router.delete(
-  "/:id",
-  authRequired,
-  requireRole(["admin", "organizer"]),
-  [param("id").isInt()],
-  async (req, res, next) => {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) return res.status(400).json({ success: false, error: "Invalid id" });
-      const [result] = await pool.query("DELETE FROM events WHERE event_id = ?", [Number(req.params.id)]);
-      if (!result.affectedRows) return res.status(404).json({ success: false, error: "Event not found" });
-      return res.json({ success: true, data: { deleted: true } });
-    } catch (err) {
-      return next(err);
-    }
+router.delete("/:id", authRequired, requireRole(["admin", "organizer"]), [param("id").isInt()], async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ success: false, error: "Invalid id" });
+    const [result] = await pool.query("DELETE FROM events WHERE event_id = ?", [Number(req.params.id)]);
+    if (!result.affectedRows) return res.status(404).json({ success: false, error: "Event not found" });
+    return res.json({ success: true, data: { deleted: true } });
+  } catch (err) {
+    return next(err);
   }
-);
+});
 
 router.post(
   "/:id/rounds",
   authRequired,
   requireRole(["admin", "organizer"]),
-  [
-    param("id").isInt(),
-    body("prelim_date").isISO8601(),
-    body("semi_date").isISO8601(),
-    body("final_date").isISO8601(),
-    body("venue_id").isInt(),
-  ],
+  [param("id").isInt(), body("prelim_date").isISO8601(), body("semi_date").isISO8601(), body("final_date").isISO8601(), body("venue_id").isInt()],
   async (req, res, next) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) return res.status(400).json({ success: false, error: errors.array()[0].msg });
       const eventId = Number(req.params.id);
       const { prelim_date, semi_date, final_date, venue_id } = req.body;
-      await pool.query("CALL sp_schedule_event_rounds(?, ?, ?, ?, ?)", [
-        eventId,
-        prelim_date,
-        semi_date,
-        final_date,
-        venue_id,
-      ]);
+      await pool.query("INSERT INTO event_rounds (event_id, round_type, round_date, venue_id) VALUES (?, 'Prelims', ?, ?), (?, 'Semi-Finals', ?, ?), (?, 'Finals', ?, ?)", [eventId, prelim_date, venue_id, eventId, semi_date, venue_id, eventId, final_date, venue_id]);
       return res.status(201).json({ success: true, data: { event_id: eventId } });
     } catch (err) {
       return next(err);
@@ -320,16 +266,17 @@ router.post(
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) return res.status(400).json({ success: false, error: errors.array()[0].msg });
+
       const eventId = Number(req.params.id);
-      const judgeIds = req.body.judge_ids.map((x) => Number(x)).filter((x) => Number.isInteger(x));
+      const judgeIds = req.body.judge_ids.map((value) => Number(value)).filter((value) => Number.isInteger(value));
       if (!judgeIds.length) return res.status(400).json({ success: false, error: "No valid judge ids" });
 
-      const values = judgeIds.map((jid) => [eventId, jid]);
-      const [result] = await pool.query(
-        "INSERT IGNORE INTO event_judges (event_id, judge_id) VALUES ?",
-        [values]
-      );
-      return res.status(201).json({ success: true, data: { assigned: result.affectedRows } });
+      for (const judgeId of judgeIds) {
+        await pool.query("INSERT IGNORE INTO event_judges (event_id, judge_id) VALUES (?, ?)", [eventId, judgeId]);
+        await pool.query("UPDATE judges SET assigned_events_count = assigned_events_count + 1 WHERE judge_id = ?", [judgeId]);
+      }
+
+      return res.status(201).json({ success: true, data: { assigned: judgeIds.length } });
     } catch (err) {
       return next(err);
     }
@@ -340,8 +287,22 @@ router.get("/:id/leaderboard", [param("id").isInt()], async (req, res, next) => 
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ success: false, error: "Invalid id" });
-    const [rows] = await pool.query("CALL sp_get_leaderboard(?)", [Number(req.params.id)]);
-    return res.json({ success: true, data: rows[0] || [] });
+    const [rows] = await pool.query(
+      `
+      SELECT
+        p.participant_id,
+        u.name AS participant,
+        ROUND(AVG(jg.score), 2) AS avg_score
+      FROM judging jg
+      JOIN participants p ON p.participant_id = jg.participant_id
+      JOIN users u ON u.user_id = p.user_id
+      WHERE jg.event_id = ?
+      GROUP BY p.participant_id, u.name
+      ORDER BY avg_score DESC, u.name ASC
+      `,
+      [Number(req.params.id)]
+    );
+    return res.json({ success: true, data: rows });
   } catch (err) {
     return next(err);
   }

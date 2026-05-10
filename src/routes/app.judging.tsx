@@ -176,7 +176,6 @@ function Judging() {
           </div>
         </div>
       )}
-      </div>
     </div>
   );
 }

@@ -58,15 +58,12 @@ CREATE TABLE events (
   max_participants INT NOT NULL CHECK (max_participants > 0),
   registration_fee DECIMAL(10,2) NOT NULL DEFAULT 0.00 CHECK (registration_fee >= 0),
   prize_pool DECIMAL(12,2) NOT NULL DEFAULT 0.00 CHECK (prize_pool >= 0),
-<<<<<<< HEAD
   sponsorship_total DECIMAL(12,2) NOT NULL DEFAULT 0.00 CHECK (sponsorship_total >= 0),
   total_prize_pool DECIMAL(12,2) AS (prize_pool + sponsorship_total) STORED,
   event_status ENUM('draft','open','full','ongoing','completed','cancelled') NOT NULL DEFAULT 'draft',
   assigned_judge_id INT NULL,
   organizer_id INT NOT NULL,
   venue_id INT NULL,
-=======
->>>>>>> bd4ef49a5689b2be6e725836cf4b366c52976df5
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT fk_events_organizer FOREIGN KEY (organizer_id) REFERENCES users(user_id) ON DELETE RESTRICT ON UPDATE CASCADE,
@@ -113,15 +110,13 @@ CREATE TABLE judge_assignments (
 CREATE TABLE participants (
   participant_id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
+  event_id INT NOT NULL,
   participant_type ENUM('individual','team') NOT NULL DEFAULT 'individual',
   roll_number VARCHAR(60) NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT uq_participant_user UNIQUE (user_id),
   CONSTRAINT fk_participants_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE ON UPDATE CASCADE,
-<<<<<<< HEAD
-  INDEX idx_participants_user_id (user_id)
-=======
   CONSTRAINT fk_participants_event FOREIGN KEY (event_id) REFERENCES events(event_id) ON DELETE CASCADE ON UPDATE CASCADE,
   INDEX idx_participants_user_id (user_id),
   INDEX idx_participants_event_id (event_id)
@@ -158,7 +153,6 @@ CREATE TABLE event_judges (
   CONSTRAINT uq_event_judges_event_judge UNIQUE (event_id, judge_id),
   CONSTRAINT fk_event_judges_event FOREIGN KEY (event_id) REFERENCES events(event_id) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT fk_event_judges_judge FOREIGN KEY (judge_id) REFERENCES judges(judge_id) ON DELETE CASCADE ON UPDATE CASCADE
->>>>>>> bd4ef49a5689b2be6e725836cf4b366c52976df5
 ) ENGINE=InnoDB;
 
 CREATE TABLE teams (
@@ -315,7 +309,6 @@ JOIN users u ON u.user_id = a.judge_id
 WHERE u.role = 'judge'
 GROUP BY u.user_id, u.name;
 
-<<<<<<< HEAD
 CREATE VIEW vw_sponsorship_totals AS
 SELECT
   e.event_id,
@@ -325,7 +318,7 @@ SELECT
 FROM events e
 LEFT JOIN sponsorships s ON s.event_id = e.event_id AND s.status = 'confirmed'
 GROUP BY e.event_id, e.event_name;
-=======
+
 CREATE TABLE passes (
   pass_id VARCHAR(36) PRIMARY KEY,
   participant_id INT NOT NULL,
@@ -338,6 +331,3 @@ CREATE TABLE passes (
   INDEX idx_passes_event_id (event_id)
 ) ENGINE=InnoDB;
 
-
-select * from users;
->>>>>>> bd4ef49a5689b2be6e725836cf4b366c52976df5
