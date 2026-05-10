@@ -37,7 +37,7 @@ function LeaderboardPanel({ event }: { event: any }) {
             <li key={`${event.id}-${row.rank}-${row.participant_id}`} className="flex items-center gap-3 py-2.5">
               <span className="font-display text-lg font-semibold tabular w-7 text-primary">{String(row.rank).padStart(2, "0")}</span>
               <span className="text-sm flex-1">{row.name}</span>
-              <span className="font-mono text-sm tabular text-foreground">{Number(row.score).toFixed(2)}</span>
+              <span className="font-mono text-sm tabular text-foreground">{Number(row.score ?? 0).toFixed(2)}</span>
             </li>
           ))}
         </ol>

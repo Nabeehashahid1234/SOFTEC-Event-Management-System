@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
 import {
   LayoutDashboard, Calendar, Users, FileText, Trophy, Building2,
-  Award, BedDouble, LogOut, Sparkles, Megaphone,
+  Award, BedDouble, LogOut, Sparkles, Megaphone, BarChart2,
 } from "lucide-react";
 import { cn } from "@/lib/format";
 
@@ -24,6 +24,7 @@ const NAV: Record<string, { to: string; label: string; icon: any }[]> = {
     { to: "/app/dashboard", label: "Editor's Desk", icon: LayoutDashboard },
     { to: "/app/events", label: "My Events", icon: Calendar },
     { to: "/app/events/new", label: "Create", icon: Sparkles },
+    { to: "/app/reports", label: "Reports", icon: BarChart2 },
   ],
   judge: [
     { to: "/app/dashboard", label: "Adjudication", icon: LayoutDashboard },
@@ -55,7 +56,7 @@ export function Sidebar() {
 
       <nav className="flex-1 px-3 space-y-0.5">
         {items.map(it => {
-          const active = path === it.to || (it.to !== "/app/dashboard" && path.startsWith(it.to));
+          const active = path === it.to;
           return (
             <Link
               key={it.to}

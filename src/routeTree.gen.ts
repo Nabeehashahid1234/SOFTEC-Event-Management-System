@@ -9,10 +9,12 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SponsorsRouteImport } from './routes/sponsors'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as EventsRouteImport } from './routes/events'
 import { Route as AppRouteImport } from './routes/app'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as EventsEventIdRouteImport } from './routes/events.$eventId'
@@ -28,6 +30,16 @@ import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
 import { Route as AppAccommodationRouteImport } from './routes/app.accommodation'
 import { Route as AppEventsNewRouteImport } from './routes/app.events.new'
 
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SponsorsRoute = SponsorsRouteImport.update({
+  id: '/sponsors',
+  path: '/sponsors',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
@@ -121,6 +133,8 @@ const AppEventsNewRoute = AppEventsNewRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/sponsors': typeof SponsorsRoute
   '/app': typeof AppRouteWithChildren
   '/events': typeof EventsRouteWithChildren
   '/login': typeof LoginRoute
@@ -141,6 +155,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/sponsors': typeof SponsorsRoute
   '/events': typeof EventsRouteWithChildren
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
@@ -161,6 +177,8 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/sponsors': typeof SponsorsRoute
   '/app': typeof AppRouteWithChildren
   '/events': typeof EventsRouteWithChildren
   '/login': typeof LoginRoute
@@ -183,6 +201,8 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/about'
+    | '/sponsors'
     | '/app'
     | '/events'
     | '/login'
@@ -203,6 +223,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/about'
+    | '/sponsors'
     | '/events'
     | '/login'
     | '/signup'
@@ -222,6 +244,8 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/about'
+    | '/sponsors'
     | '/app'
     | '/events'
     | '/login'
@@ -243,6 +267,8 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
+  SponsorsRoute: typeof SponsorsRoute
   AppRoute: typeof AppRouteWithChildren
   EventsRoute: typeof EventsRouteWithChildren
   LoginRoute: typeof LoginRoute
@@ -251,6 +277,20 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sponsors': {
+      id: '/sponsors'
+      path: '/sponsors'
+      fullPath: '/sponsors'
+      preLoaderRoute: typeof SponsorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signup': {
       id: '/signup'
       path: '/signup'
@@ -435,6 +475,8 @@ const EventsRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
+  SponsorsRoute: SponsorsRoute,
   AppRoute: AppRouteWithChildren,
   EventsRoute: EventsRouteWithChildren,
   LoginRoute: LoginRoute,
