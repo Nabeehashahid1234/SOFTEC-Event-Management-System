@@ -11,7 +11,7 @@ interface DashboardState {
 
 function fallbackDashboard(role?: string) {
   if (role === "admin") {
-    return { kpi: {}, roleDistribution: [], categoryDistribution: [], venueUtilization: [], topPrograms: [], revenueBreakdown: [], recentActivity: [], paymentStatus: [] };
+    return { kpi: {}, roleDistribution: [], categoryDistribution: [], venueUtilization: [], topPrograms: [], revenueBreakdown: [], pendingSponsorships: [], sponsorshipHistory: [], recentActivity: [], paymentStatus: [] };
   }
   if (role === "participant") {
     return { myEvents: [], upcomingEvents: [], payments: [], accommodation: [], teams: [], passes: [], leaderboards: [], stats: {} };

@@ -79,7 +79,6 @@ async function validateTables() {
     "payments",
     "judge_assignments",
     "event_rounds",
-    "scores",
     "sponsorships",
     "sponsors",
     "teams",
@@ -174,7 +173,7 @@ async function validateSampleQueries() {
   // Test sponsorships query
   try {
     const [rows] = await pool.query(
-      `SELECT SUM(amount) AS total FROM sponsorships WHERE status = 'confirmed'`
+      `SELECT SUM(amount) AS total FROM sponsorships WHERE status = 'approved'`
     );
     await log("pass", "Query: Sponsorship totals works");
   } catch (error) {

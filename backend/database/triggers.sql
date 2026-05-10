@@ -94,19 +94,19 @@ BEGIN
   END IF;
 END//
 
--- ─── Keep sponsorship_total in sync when a sponsorship is confirmed/rejected ──
+-- ─── Keep sponsorship_total in sync when a sponsorship is approved/rejected ──
 DROP TRIGGER IF EXISTS sync_sponsorship_total_on_update//
 CREATE TRIGGER sync_sponsorship_total_on_update
 AFTER UPDATE ON sponsorships
 FOR EACH ROW
 BEGIN
-  -- Recalculate from scratch to avoid double-counting on repeated confirms
+  -- Recalculate from scratch to avoid double-counting on repeated moderation updates
   UPDATE events
   SET    sponsorship_total = (
            SELECT COALESCE(SUM(amount), 0)
            FROM   sponsorships
            WHERE  event_id = NEW.event_id
-             AND  status   = 'confirmed'
+             AND  status   = 'approved'
          )
   WHERE  event_id = NEW.event_id;
 END//

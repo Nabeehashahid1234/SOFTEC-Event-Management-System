@@ -15,13 +15,13 @@ DROP VIEW IF EXISTS revenue_breakdown;
 DROP VIEW IF EXISTS high_quality_events;
 DROP VIEW IF EXISTS upcoming_events;
 DROP VIEW IF EXISTS judge_workload;
+DROP VIEW IF EXISTS vw_pending_sponsorships;
 DROP VIEW IF EXISTS vw_sponsorship_totals;
 DROP VIEW IF EXISTS vw_judge_workload;
 DROP VIEW IF EXISTS vw_event_leaderboard;
 DROP TABLE IF EXISTS notifications;
 DROP TABLE IF EXISTS event_passes;
 DROP TABLE IF EXISTS passes;
-DROP TABLE IF EXISTS scores;
 DROP TABLE IF EXISTS judging;
 DROP TABLE IF EXISTS event_judges;
 DROP TABLE IF EXISTS sponsorships;
@@ -211,45 +211,24 @@ CREATE TABLE registrations (
   status ENUM('pending_payment','confirmed','cancelled') NOT NULL DEFAULT 'pending_payment',
   registered_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   confirmed_at TIMESTAMP NULL,
-  seat_number VARCHAR(60) NULL,
-  registration_reference VARCHAR(100) NULL UNIQUE,
-  CONSTRAINT uq_registration_event_participant UNIQUE (event_id, participant_id),
-  CONSTRAINT fk_registrations_event FOREIGN KEY (event_id) REFERENCES events(event_id) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT fk_registrations_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT fk_registrations_participant FOREIGN KEY (participant_id) REFERENCES participants(participant_id) ON DELETE CASCADE ON UPDATE CASCADE,
-  INDEX idx_registrations_user_id (user_id),
-  INDEX idx_registrations_event_id (event_id),
-  INDEX idx_registrations_event (event_id),
-  INDEX idx_registrations_participant_id (participant_id),
-  INDEX idx_registrations_status (status)
-) ENGINE=InnoDB;
-
-CREATE TABLE payments (
-  payment_id INT AUTO_INCREMENT PRIMARY KEY,
-  registration_id INT NULL,
-  sponsor_id INT NULL,
-  user_id INT NOT NULL,
-  event_id INT NULL,
-  amount DECIMAL(12,2) NOT NULL CHECK (amount >= 0),
-  payment_type ENUM('registration','accommodation','sponsorship','refund') NOT NULL,
-  status ENUM('pending','completed','failed') NOT NULL DEFAULT 'pending',
-  payment_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  provider_reference VARCHAR(160) NULL,
-  metadata JSON NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  CONSTRAINT fk_payments_registration FOREIGN KEY (registration_id) REFERENCES registrations(registration_id) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT fk_payments_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT fk_payments_event FOREIGN KEY (event_id) REFERENCES events(event_id) ON DELETE CASCADE ON UPDATE CASCADE,
-  INDEX idx_payments_user (user_id),
-  INDEX idx_payments_event (event_id),
-  INDEX idx_payments_payment_date (payment_date),
-  INDEX idx_payments_sponsor_id (sponsor_id),
-  INDEX idx_payments_user_status (user_id, status),
-  INDEX idx_payments_event_status (event_id, status)
-) ENGINE=InnoDB;
-
-CREATE TABLE sponsors (
+    SELECT
+      ranked.rank,
+      ranked.participant_id,
+      ranked.participant_name AS name,
+      ranked.average_score AS score
+    FROM (
+      SELECT
+        p.participant_id,
+        u.name AS participant_name,
+        ROUND(AVG(j.score), 2) AS average_score,
+        ROW_NUMBER() OVER (ORDER BY AVG(j.score) DESC, COUNT(j.judging_id) DESC, p.participant_id ASC) AS rank
+      FROM judging j
+      JOIN participants p ON p.participant_id = j.participant_id
+      JOIN users u ON u.user_id = p.user_id
+      WHERE j.event_id = p_event_id
+      GROUP BY p.participant_id, u.name
+    ) AS ranked
+    ORDER BY ranked.rank;
   sponsor_id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NULL,
   company_name VARCHAR(160) NOT NULL,
@@ -278,10 +257,11 @@ CREATE TABLE sponsorships (
   sponsorship_type ENUM('Title','Gold','Silver','Bronze','Partner') NOT NULL DEFAULT 'Gold',
   amount DECIMAL(12,2) NOT NULL CHECK (amount >= 0),
   tier ENUM('Title','Gold','Silver','Partner') NOT NULL DEFAULT 'Gold',
-  status ENUM('pending','confirmed','rejected','cancelled') NOT NULL DEFAULT 'pending',
+  status ENUM('pending','approved','rejected','cancelled') NOT NULL DEFAULT 'pending',
   approved_by INT NULL,
   approved_at TIMESTAMP NULL,
   rejection_reason VARCHAR(500) NULL,
+  admin_notes TEXT NULL,
   sponsored_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_sponsorships_sponsor FOREIGN KEY (sponsor_id) REFERENCES sponsors(sponsor_id) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -291,6 +271,7 @@ CREATE TABLE sponsorships (
   INDEX idx_sponsorships_event_id (event_id),
   INDEX idx_sponsorships_sponsor_id (sponsor_id),
   INDEX idx_sponsorships_user_id (user_id),
+  INDEX idx_sponsorships_approved_by (approved_by),
   INDEX idx_sponsorships_created_at (created_at),
   INDEX idx_sponsorships_status (status)
 ) ENGINE=InnoDB;
@@ -322,22 +303,6 @@ CREATE TABLE user_accommodations (
   INDEX idx_user_accommodations_user_id (user_id),
   INDEX idx_user_accommodations_accommodation_id (accommodation_id),
   INDEX idx_user_accommodations_check_in (check_in)
-) ENGINE=InnoDB;
-
-CREATE TABLE scores (
-  score_id INT AUTO_INCREMENT PRIMARY KEY,
-  event_id INT NOT NULL,
-  judge_id INT NOT NULL,
-  participant_id INT NOT NULL,
-  score DECIMAL(4,2) NOT NULL CHECK (score >= 0 AND score <= 10),
-  comments TEXT NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT uq_scores_unique UNIQUE (event_id, judge_id, participant_id),
-  CONSTRAINT fk_scores_event FOREIGN KEY (event_id) REFERENCES events(event_id) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT fk_scores_judge FOREIGN KEY (judge_id) REFERENCES users(user_id) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT fk_scores_participant FOREIGN KEY (participant_id) REFERENCES participants(participant_id) ON DELETE CASCADE ON UPDATE CASCADE,
-  INDEX idx_scores_event_judge (event_id, judge_id),
-  INDEX idx_scores_participant (participant_id)
 ) ENGINE=InnoDB;
 
 CREATE TABLE event_passes (
@@ -412,7 +377,7 @@ SELECT
   COALESCE(SUM(sp.amount), 0) AS total_amount,
   COUNT(DISTINCT sp.event_id) AS events_sponsored
 FROM sponsors s
-LEFT JOIN sponsorships sp ON sp.sponsor_id = s.sponsor_id
+LEFT JOIN sponsorships sp ON sp.sponsor_id = s.sponsor_id AND sp.status = 'approved'
 GROUP BY s.sponsor_id, s.company_name, s.tier;
 
 CREATE OR REPLACE VIEW participant_logistics AS
@@ -500,11 +465,40 @@ CREATE OR REPLACE VIEW vw_sponsorship_totals AS
 SELECT
   e.event_id,
   e.event_name,
-  COALESCE(SUM(CASE WHEN s.status = 'confirmed' THEN s.amount ELSE 0 END), 0) AS confirmed_sponsorship_amount,
-  COUNT(DISTINCT CASE WHEN s.status = 'confirmed' THEN s.sponsor_id END) AS sponsor_count
+  COALESCE(SUM(CASE WHEN s.status = 'approved' THEN s.amount ELSE 0 END), 0) AS approved_sponsorship_amount,
+  COUNT(DISTINCT CASE WHEN s.status = 'approved' THEN s.sponsor_id END) AS sponsor_count,
+  COUNT(DISTINCT CASE WHEN s.status = 'pending' THEN s.sponsorship_id END) AS pending_count,
+  COUNT(DISTINCT CASE WHEN s.status = 'rejected' THEN s.sponsorship_id END) AS rejected_count
 FROM events e
 LEFT JOIN sponsorships s ON s.event_id = e.event_id
 GROUP BY e.event_id, e.event_name;
+
+CREATE OR REPLACE VIEW vw_pending_sponsorships AS
+SELECT
+  sp.sponsorship_id,
+  sp.amount,
+  sp.sponsorship_type,
+  sp.status,
+  sp.created_at,
+  sp.approved_by,
+  sp.approved_at,
+  sp.rejection_reason,
+  sp.admin_notes,
+  e.event_id,
+  e.event_name,
+  e.event_date,
+  s.sponsor_id,
+  s.company_name,
+  s.sponsorship_level,
+  u.user_id AS sponsor_user_id,
+  u.name AS sponsor_user_name,
+  u.email AS sponsor_email
+FROM sponsorships sp
+JOIN sponsors s ON s.sponsor_id = sp.sponsor_id
+JOIN events e ON e.event_id = sp.event_id
+LEFT JOIN users u ON u.user_id = sp.user_id
+WHERE sp.status = 'pending'
+ORDER BY sp.created_at ASC;
 
 DELIMITER //
 
@@ -592,7 +586,7 @@ BEGIN
     SELECT COALESCE(SUM(s.amount), 0) AS sponsorship_total
     FROM sponsorships s
     WHERE s.event_id = p_event_id
-      AND s.status = 'confirmed'
+      AND s.status = 'approved'
   ) totals
     ON 1=1
   SET e.sponsorship_total = totals.sponsorship_total,

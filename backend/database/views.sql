@@ -32,8 +32,8 @@ SELECT
   s.sponsor_id,
   s.company_name,
   s.sponsorship_level                               AS tier,
-  COALESCE(SUM(sp.amount), 0)                       AS total_amount,
-  COUNT(DISTINCT CASE WHEN sp.status = 'confirmed' THEN sp.event_id END) AS events_sponsored
+  COALESCE(SUM(CASE WHEN sp.status = 'approved' THEN sp.amount ELSE 0 END), 0) AS total_amount,
+  COUNT(DISTINCT CASE WHEN sp.status = 'approved' THEN sp.event_id END) AS events_sponsored
 FROM sponsors s
 LEFT JOIN sponsorships sp ON sp.sponsor_id = s.sponsor_id
 GROUP BY s.sponsor_id, s.company_name, s.sponsorship_level;
@@ -134,9 +134,10 @@ CREATE OR REPLACE VIEW vw_sponsorship_totals AS
 SELECT
   e.event_id,
   e.event_name,
-  COALESCE(SUM(CASE WHEN s.status = 'confirmed' THEN s.amount ELSE 0 END), 0) AS confirmed_sponsorship_amount,
-  COUNT(DISTINCT CASE WHEN s.status = 'confirmed' THEN s.sponsor_id END)       AS sponsor_count,
-  COUNT(DISTINCT CASE WHEN s.status = 'pending'   THEN s.sponsorship_id END)   AS pending_count
+  COALESCE(SUM(CASE WHEN s.status = 'approved' THEN s.amount ELSE 0 END), 0) AS approved_sponsorship_amount,
+  COUNT(DISTINCT CASE WHEN s.status = 'approved' THEN s.sponsor_id END)       AS sponsor_count,
+  COUNT(DISTINCT CASE WHEN s.status = 'pending'   THEN s.sponsorship_id END)   AS pending_count,
+  COUNT(DISTINCT CASE WHEN s.status = 'rejected'  THEN s.sponsorship_id END)   AS rejected_count
 FROM events e
 LEFT JOIN sponsorships s ON s.event_id = e.event_id
 GROUP BY e.event_id, e.event_name;
@@ -149,6 +150,10 @@ SELECT
   sp.sponsorship_type,
   sp.status,
   sp.created_at,
+  sp.approved_by,
+  sp.approved_at,
+  sp.rejection_reason,
+  sp.admin_notes,
   e.event_id,
   e.event_name,
   e.event_date,

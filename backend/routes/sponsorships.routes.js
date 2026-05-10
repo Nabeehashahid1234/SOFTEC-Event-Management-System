@@ -119,7 +119,7 @@ router.post(
   }
 );
 
-router.patch("/:id/confirm", authRequired, requireRole(["admin"]), [param("id").isInt()], async (req, res, next) => {
+router.patch("/:id/approve", authRequired, requireRole(["admin"]), [param("id").isInt(), body("admin_notes").optional().isString().trim().isLength({ max: 1000 })], async (req, res, next) => {
   let conn;
   try {
     const errors = validationResult(req);
@@ -127,6 +127,7 @@ router.patch("/:id/confirm", authRequired, requireRole(["admin"]), [param("id").
 
     const sponsorshipId = Number(req.params.id);
     const adminId = req.user.user_id;
+    const adminNotes = req.body.admin_notes || null;
 
     conn = await pool.getConnection();
     await conn.beginTransaction();
@@ -139,14 +140,14 @@ router.patch("/:id/confirm", authRequired, requireRole(["admin"]), [param("id").
       await conn.rollback();
       return res.status(404).json({ success: false, error: "Sponsorship not found" });
     }
-    if (sp.status === "confirmed") {
+    if (sp.status === "approved") {
       await conn.rollback();
-      return res.status(400).json({ success: false, error: "Sponsorship already confirmed" });
+      return res.status(400).json({ success: false, error: "Sponsorship already approved" });
     }
 
     await conn.query(
-      "UPDATE sponsorships SET status = 'confirmed', approved_by = ?, approved_at = CURRENT_TIMESTAMP WHERE sponsorship_id = ?",
-      [adminId, sponsorshipId]
+      "UPDATE sponsorships SET status = 'approved', approved_by = ?, approved_at = CURRENT_TIMESTAMP, admin_notes = ? WHERE sponsorship_id = ?",
+      [adminId, adminNotes, sponsorshipId]
     );
 
     await conn.query(
@@ -162,7 +163,7 @@ router.patch("/:id/confirm", authRequired, requireRole(["admin"]), [param("id").
     }
 
     await conn.commit();
-    return res.json({ success: true, data: { sponsorship_id: sponsorshipId, status: "confirmed" } });
+    return res.json({ success: true, data: { sponsorship_id: sponsorshipId, status: "approved" } });
   } catch (err) {
     if (conn) await conn.rollback();
     return next(err);
@@ -172,7 +173,7 @@ router.patch("/:id/confirm", authRequired, requireRole(["admin"]), [param("id").
 });
 
 router.patch("/:id/reject", authRequired, requireRole(["admin"]),
-  [param("id").isInt(), body("rejection_reason").optional().isString().trim().isLength({ max: 500 })],
+  [param("id").isInt(), body("rejection_reason").optional().isString().trim().isLength({ max: 500 }), body("admin_notes").optional().isString().trim().isLength({ max: 1000 })],
   async (req, res, next) => {
     let conn;
     try {
@@ -182,6 +183,7 @@ router.patch("/:id/reject", authRequired, requireRole(["admin"]),
       const sponsorshipId = Number(req.params.id);
       const adminId = req.user.user_id;
       const rejection_reason = req.body.rejection_reason || null;
+      const adminNotes = req.body.admin_notes || null;
 
       conn = await pool.getConnection();
       await conn.beginTransaction();
@@ -200,8 +202,8 @@ router.patch("/:id/reject", authRequired, requireRole(["admin"]),
       }
 
       await conn.query(
-        "UPDATE sponsorships SET status = 'rejected', approved_by = ?, approved_at = CURRENT_TIMESTAMP, rejection_reason = ? WHERE sponsorship_id = ?",
-        [adminId, rejection_reason, sponsorshipId]
+        "UPDATE sponsorships SET status = 'rejected', approved_by = ?, approved_at = CURRENT_TIMESTAMP, rejection_reason = ?, admin_notes = ? WHERE sponsorship_id = ?",
+        [adminId, rejection_reason, adminNotes, sponsorshipId]
       );
 
       await conn.query(

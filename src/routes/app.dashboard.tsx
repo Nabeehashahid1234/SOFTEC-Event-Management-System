@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
 import { useDashboard } from "@/hooks/useDashboard";
 import { useConfirmPayment } from "@/hooks/useRegistration";
+import { useApproveSponsorship, useRejectSponsorship } from "@/hooks/useSponsorship";
 import { Eyebrow, Hairline, Pill, StatCard, CapacityBar } from "@/components/ui-bits";
 import { fmtDate, fmtPKR } from "@/lib/format";
 import { toast } from "sonner";
@@ -139,8 +140,8 @@ function ParticipantDash({ data }: { data: any }) {
           </h1>
           <p className="text-muted-foreground mt-2 text-sm">Your SOFTEC dashboard — registrations, passes, and upcoming events.</p>
         </div>
-        <Link to="/events" className="hidden md:inline-flex items-center gap-2 rounded-md bg-primary text-primary-foreground px-4 py-2.5 text-sm font-medium hover:bg-primary/90 transition-colors">
-          <Calendar className="h-4 w-4" /> Browse Events
+        <Link to="/app/events" className="hidden md:inline-flex items-center gap-2 rounded-md bg-primary text-primary-foreground px-4 py-2.5 text-sm font-medium hover:bg-primary/90 transition-colors">
+          <Calendar className="h-4 w-4" /> Browse Programmes
         </Link>
       </div>
 
@@ -163,9 +164,9 @@ function ParticipantDash({ data }: { data: any }) {
 
       {/* My Registered Events */}
       <Section
-        title="My Registered Events"
+        title="My Programmes"
         action={
-          <Link to="/events" className="text-sm text-primary hover:underline inline-flex items-center gap-1">
+          <Link to="/app/events" className="text-sm text-primary hover:underline inline-flex items-center gap-1">
             Browse more <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         }
@@ -211,8 +212,9 @@ function ParticipantDash({ data }: { data: any }) {
                         {confirmPayment.isPending ? "Processing…" : `Pay ${fmtPKR(e.amount || e.registration_fee)}`}
                       </button>
                     )}
-                    <Link to="/events/$eventId" params={{ eventId: String(e.event_id) }} className="p-1.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground">
-                      <ChevronRight className="h-4 w-4" />
+                    <Link to="/events/$eventId" params={{ eventId: String(e.event_id) }} className="inline-flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:border-primary/40 hover:text-primary transition-colors">
+                      View programme
+                      <ChevronRight className="h-3.5 w-3.5" />
                     </Link>
                   </div>
                 </div>
@@ -577,7 +579,7 @@ function SponsorDash({ data }: { data: any }) {
       )}
 
       <div className="grid grid-cols-3 gap-4">
-        <StatCard label="Total Contribution" value={fmtPKR(stats.total_contribution || 0)} hint="Confirmed sponsorships" accent="gold" />
+        <StatCard label="Total Contribution" value={fmtPKR(stats.total_contribution || 0)} hint="Approved sponsorships" accent="gold" />
         <StatCard label="Events Sponsored" value={String(stats.events_sponsored || 0)} hint="Programmes supported" />
         <StatCard label="Total Reach" value={String(stats.total_reach || 0)} hint="Participants across events" accent="sage" />
       </div>
@@ -632,7 +634,8 @@ function SponsorDash({ data }: { data: any }) {
                   </div>
                   <div className="text-right">
                     <p className="font-mono text-sm font-semibold">{fmtPKR(h.amount)}</p>
-                    <Pill tone={h.status === "confirmed" ? "sage" : h.status === "cancelled" ? "rose" : "gold"}>{h.status}</Pill>
+                    <Pill tone={h.status === "approved" ? "sage" : h.status === "rejected" ? "rose" : h.status === "pending" ? "gold" : "muted"}>{h.status}</Pill>
+                    {h.rejection_reason && <p className="mt-1 text-xs text-muted-foreground max-w-sm">{h.rejection_reason}</p>}
                   </div>
                 </div>
               ))}
@@ -661,8 +664,19 @@ function AdminDash({ data }: { data: any }) {
   const venueUtilization = Array.isArray(data.venueUtilization) ? data.venueUtilization : [];
   const topPrograms      = Array.isArray(data.topPrograms)      ? data.topPrograms      : [];
   const revenueBreakdown = Array.isArray(data.revenueBreakdown) ? data.revenueBreakdown : [];
+  const pendingSponsorships = Array.isArray(data.pendingSponsorships) ? data.pendingSponsorships : [];
+  const sponsorshipHistory = Array.isArray(data.sponsorshipHistory) ? data.sponsorshipHistory : [];
   const recentActivity   = Array.isArray(data.recentActivity)   ? data.recentActivity   : [];
   const paymentStatus    = Array.isArray(data.paymentStatus)    ? data.paymentStatus    : [];
+  const approveSponsorship = useApproveSponsorship();
+  const rejectSponsorship = useRejectSponsorship();
+  const [pendingList, setPendingList] = useState(pendingSponsorships);
+  const [historyList, setHistoryList] = useState(sponsorshipHistory);
+
+  useEffect(() => {
+    setPendingList(pendingSponsorships);
+    setHistoryList(sponsorshipHistory);
+  }, [pendingSponsorships, sponsorshipHistory]);
 
   const colors = ["var(--primary)", "var(--sage)", "var(--gold)", "var(--rose)", "var(--electric)"];
 
@@ -686,6 +700,60 @@ function AdminDash({ data }: { data: any }) {
         <StatCard label="Revenue" value={fmtPKR(kpi.revenue_completed || 0)} hint={`+ ${fmtPKR(kpi.pending_revenue || 0)} pending`} accent="gold" />
         <StatCard label="Registrations" value={String(kpi.total_registrations || 0)} hint="Across all events" />
       </div>
+
+      <Section title="Pending Sponsorship Approvals">
+        {pendingList.length === 0 ? (
+          <EmptyState icon={Megaphone} title="No pending sponsorships" desc="Approved and rejected sponsorships are tracked in moderation history below." />
+        ) : (
+          <div className="rounded-lg border border-border bg-card divide-y divide-border">
+            {pendingList.map((sp: any) => (
+              <div key={sp.sponsorship_id} className="p-4 flex flex-col md:flex-row md:items-center gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-medium truncate">{sp.company_name}</p>
+                    <Pill tone="gold">Pending</Pill>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1 truncate">{sp.event_name} · {sp.sponsorship_type} · {fmtPKR(sp.amount)}</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={async () => {
+                      try {
+                        await approveSponsorship.mutateAsync({ sponsorshipId: sp.sponsorship_id, adminNotes: window.prompt("Admin notes (optional)") || undefined });
+                        setPendingList((prev: any[]) => prev.filter((item) => item.sponsorship_id !== sp.sponsorship_id));
+                        setHistoryList((prev: any[]) => [{ ...sp, status: "approved", approved_at: new Date().toISOString() }, ...prev]);
+                        toast.success("Sponsorship approved");
+                      } catch (err: any) {
+                        toast.error(err?.response?.data?.error || "Approval failed");
+                      }
+                    }}
+                    className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90"
+                  >
+                    Approve
+                  </button>
+                  <button
+                    onClick={async () => {
+                      const reason = window.prompt("Rejection reason")?.trim();
+                      if (!reason) return;
+                      try {
+                        await rejectSponsorship.mutateAsync({ sponsorshipId: sp.sponsorship_id, rejectionReason: reason, adminNotes: reason });
+                        setPendingList((prev: any[]) => prev.filter((item) => item.sponsorship_id !== sp.sponsorship_id));
+                        setHistoryList((prev: any[]) => [{ ...sp, status: "rejected", rejection_reason: reason, approved_at: new Date().toISOString() }, ...prev]);
+                        toast.success("Sponsorship rejected");
+                      } catch (err: any) {
+                        toast.error(err?.response?.data?.error || "Rejection failed");
+                      }
+                    }}
+                    className="px-3 py-1.5 rounded-md border border-border text-xs font-medium hover:bg-muted/50"
+                  >
+                    Reject
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Section>
 
       {/* Charts row */}
       <div className="grid md:grid-cols-3 gap-4">
@@ -791,6 +859,24 @@ function AdminDash({ data }: { data: any }) {
           )}
         </Section>
       </div>
+
+      <Section title="Sponsorship Moderation History">
+        {historyList.length === 0 ? (
+          <EmptyState icon={FileText} title="No moderation history" desc="Approved and rejected sponsorships will appear here." />
+        ) : (
+          <div className="rounded-lg border border-border bg-card divide-y divide-border">
+            {historyList.slice(0, 10).map((sp: any) => (
+              <div key={sp.sponsorship_id} className="flex items-center justify-between gap-4 p-4">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">{sp.company_name} · {sp.event_name}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{sp.admin_notes || sp.rejection_reason || fmtDate(sp.created_at)}</p>
+                </div>
+                <Pill tone={sp.status === "approved" ? "sage" : sp.status === "rejected" ? "rose" : "gold"}>{sp.status}</Pill>
+              </div>
+            ))}
+          </div>
+        )}
+      </Section>
 
       {/* Venue Utilization */}
       {venueUtilization.length > 0 && (

@@ -82,7 +82,7 @@ BEGIN
   END IF;
 END//
 
--- ─── Recalculate sponsorship_total for one event from confirmed sponsorships ──
+-- ─── Recalculate sponsorship_total for one event from approved sponsorships ──
 DROP PROCEDURE IF EXISTS sp_refresh_sponsorship_total//
 CREATE PROCEDURE sp_refresh_sponsorship_total(IN p_event_id INT)
 BEGIN
@@ -91,7 +91,7 @@ BEGIN
     SELECT COALESCE(SUM(s.amount), 0) AS total
     FROM   sponsorships s
     WHERE  s.event_id = p_event_id
-      AND  s.status   = 'confirmed'
+      AND  s.status   = 'approved'
   ) totals ON 1 = 1
   SET e.sponsorship_total = totals.total,
       e.updated_at        = CURRENT_TIMESTAMP

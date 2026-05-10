@@ -218,17 +218,17 @@ INSERT INTO sponsors (sponsor_id, company_name, contact_person, email, phone,
 -- ─────────────────────────────────────────────────────────────────────────────
 -- SPONSORSHIPS
 -- ─────────────────────────────────────────────────────────────────────────────
-INSERT INTO sponsorships (sponsor_id, user_id, event_id, sponsorship_type, amount, status) VALUES
-(1, 65, 2,  'Title',  1200000.00, 'confirmed'),
-(1, 65, 1,  'Gold',    500000.00, 'confirmed'),
-(2, 66, 3,  'Gold',    450000.00, 'confirmed'),
-(2, 66, 5,  'Silver',  250000.00, 'confirmed'),
-(3, 67, 6,  'Gold',    400000.00, 'confirmed'),
-(3, 67, 7,  'Silver',  200000.00, 'pending'),
-(4, 68, 11, 'Gold',    350000.00, 'confirmed'),
-(4, 68, 12, 'Silver',  150000.00, 'confirmed'),
-(5, 69, 16, 'Silver',  125000.00, 'pending'),
-(6, 70, 20, 'Silver',  100000.00, 'confirmed');
+INSERT INTO sponsorships (sponsor_id, user_id, event_id, sponsorship_type, amount, status, approved_by, approved_at, rejection_reason, admin_notes) VALUES
+(1, 65, 2,  'Title',  1200000.00, 'approved', 1, '2026-05-04 09:00:00', NULL, 'Flagship sponsorship approved.'),
+(1, 65, 1,  'Gold',    500000.00, 'approved', 1, '2026-05-04 09:05:00', NULL, 'Approved for programme support.'),
+(2, 66, 3,  'Gold',    450000.00, 'approved', 1, '2026-05-04 09:10:00', NULL, 'Approved after finance review.'),
+(2, 66, 5,  'Silver',  250000.00, 'approved', 1, '2026-05-04 09:15:00', NULL, 'Approved after committee review.'),
+(3, 67, 6,  'Gold',    400000.00, 'approved', 1, '2026-05-04 09:20:00', NULL, 'Approved for main stage branding.'),
+(3, 67, 7,  'Silver',  200000.00, 'pending', NULL, NULL, NULL, NULL),
+(4, 68, 11, 'Gold',    350000.00, 'approved', 1, '2026-05-04 09:25:00', NULL, 'Approved for esports event.'),
+(4, 68, 12, 'Silver',  150000.00, 'approved', 1, '2026-05-04 09:30:00', NULL, 'Approved for tournament support.'),
+(5, 69, 16, 'Silver',  125000.00, 'rejected', 1, '2026-05-04 09:35:00', 'Requested amount exceeds sponsor tier policy.', 'Rejection logged after admin review.'),
+(6, 70, 20, 'Silver',  100000.00, 'approved', 1, '2026-05-04 09:40:00', NULL, 'Approved for showcase sponsorship.');
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- PARTICIPANTS
@@ -323,7 +323,7 @@ INSERT INTO payments (payment_id, user_id, event_id, amount, payment_type, statu
 (55, 67, 7,   200000.00, 'sponsorship', 'pending',   '2026-05-03 09:30:00'),
 (56, 68, 11,  350000.00, 'sponsorship', 'completed', '2026-05-04 09:00:00'),
 (57, 68, 12,  150000.00, 'sponsorship', 'completed', '2026-05-04 09:30:00'),
-(58, 69, 16,  125000.00, 'sponsorship', 'pending',   '2026-05-05 09:00:00'),
+(58, 69, 16,  125000.00, 'sponsorship', 'failed',    '2026-05-05 09:00:00'),
 (59, 70, 20,  100000.00, 'sponsorship', 'completed', '2026-05-05 09:30:00'),
 -- Accommodation payments
 (60, 7,  NULL, 4500.00, 'accommodation', 'completed', '2026-05-10 12:00:00'),
@@ -455,13 +455,13 @@ SET registered_participants = (
   SELECT COUNT(*) FROM participants p WHERE p.event_id = e.event_id
 );
 
--- Keep sponsorship_total in sync with confirmed sponsorships
+-- Keep sponsorship_total in sync with approved sponsorships
 UPDATE events e
 SET sponsorship_total = (
   SELECT COALESCE(SUM(s.amount), 0)
   FROM sponsorships s
   WHERE s.event_id = e.event_id
-    AND s.status   = 'confirmed'
+    AND s.status   = 'approved'
 );
 
 -- Keep judge assigned_events_count in sync

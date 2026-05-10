@@ -19,12 +19,16 @@ export interface ApiSponsorship {
   event_id: number | null;
   sponsorship_type: "Gold" | "Silver" | "Title";
   amount: number;
-  status: "pending" | "confirmed" | "cancelled";
+  status: "pending" | "approved" | "rejected" | "cancelled";
   created_at: string;
   event_name?: string;
   event_date?: string;
   category?: string;
   company_name?: string;
+  approved_at?: string | null;
+  approved_by?: number | null;
+  rejection_reason?: string | null;
+  admin_notes?: string | null;
 }
 
 export function useSponsors() {
@@ -55,6 +59,36 @@ export function useCreateSponsorship() {
       return res.data.data;
     },
     onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["my-sponsorships"] });
+      qc.invalidateQueries({ queryKey: ["sponsors"] });
+    },
+  });
+}
+
+export function useApproveSponsorship() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ sponsorshipId, adminNotes }: { sponsorshipId: number; adminNotes?: string }) => {
+      const res = await api.patch(`/sponsorships/${sponsorshipId}/approve`, { admin_notes: adminNotes });
+      return res.data.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+      qc.invalidateQueries({ queryKey: ["my-sponsorships"] });
+      qc.invalidateQueries({ queryKey: ["sponsors"] });
+    },
+  });
+}
+
+export function useRejectSponsorship() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ sponsorshipId, rejectionReason, adminNotes }: { sponsorshipId: number; rejectionReason?: string; adminNotes?: string }) => {
+      const res = await api.patch(`/sponsorships/${sponsorshipId}/reject`, { rejection_reason: rejectionReason, admin_notes: adminNotes });
+      return res.data.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
       qc.invalidateQueries({ queryKey: ["my-sponsorships"] });
       qc.invalidateQueries({ queryKey: ["sponsors"] });
     },
