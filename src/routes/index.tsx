@@ -64,7 +64,7 @@ function Landing() {
     { num: "04", name: "General", desc: "Photography · debates · arts", count: events.filter((e: any) => e.category === "General").length, icon: Camera, tone: "sage" },
   ];
 
-  const featured = events.filter((e: any) => e.featured);
+  const featured = [...events].sort((a, b) => b.registered - a.registered).slice(0, 3);
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-clip">
@@ -315,7 +315,7 @@ function Landing() {
             <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">Gold Patrons</p>
             <div className="mt-6 flex flex-wrap justify-center gap-x-12 gap-y-4">
               {LANDING_SPONSORS.filter(s => s.tier === "Gold").map(s => (
-                <span key={s.id} className="font-display text-3xl md:text-4xl font-medium hover:text-primary transition-colors cursor-default">{s.company}</span>
+                <span key={s.company} className="font-display text-3xl md:text-4xl font-medium hover:text-primary transition-colors cursor-default">{s.company}</span>
               ))}
             </div>
           </div>
@@ -324,7 +324,7 @@ function Landing() {
             <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">Silver Patrons</p>
             <div className="mt-5 flex flex-wrap justify-center gap-x-8 gap-y-3">
               {LANDING_SPONSORS.filter(s => s.tier === "Silver").map(s => (
-                <span key={s.id} className="font-display text-xl text-muted-foreground hover:text-foreground transition-colors cursor-default">{s.company}</span>
+                <span key={s.company} className="font-display text-xl text-muted-foreground hover:text-foreground transition-colors cursor-default">{s.company}</span>
               ))}
             </div>
           </div>

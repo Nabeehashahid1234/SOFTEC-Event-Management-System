@@ -109,13 +109,13 @@ function EventDetail() {
                   <div className="col-span-7">Contender</div>
                   <div className="col-span-3 text-right">Score</div>
                 </div>
-                {board.map(row => (
+                {board.map((row, idx) => (
                   <div key={row.participant_id} className="grid grid-cols-12 px-5 py-3.5 border-b border-border last:border-0 items-center">
-                    <div className="col-span-2 font-display text-2xl font-semibold tabular">--</div>
+                    <div className="col-span-2 font-display text-2xl font-semibold tabular">{String(idx + 1).padStart(2, "0")}</div>
                     <div className="col-span-7">
                       <p className="text-sm font-medium">{row.name}</p>
                     </div>
-                    <div className="col-span-3 text-right font-mono tabular text-primary font-semibold">{Number(row.avg_score).toFixed(2)}</div>
+                    <div className="col-span-3 text-right font-mono tabular text-primary font-semibold">{Number(row.avg_score ?? 0).toFixed(2)}</div>
                   </div>
                 ))}
               </div>

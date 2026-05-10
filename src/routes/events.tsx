@@ -98,7 +98,7 @@ function EventBrowser() {
                   <div className="lg:col-span-8">
                     <div className="flex items-center gap-3 flex-wrap">
                       <Eyebrow>{e.category}</Eyebrow>
-                      <Pill tone={e.status === "filling" ? "ember" : e.status === "closed" ? "rose" : "sage"}>{e.status}</Pill>
+                      <Pill tone={e.status === "filling" ? "ember" : (e.status === "full" || e.status === "closed") ? "rose" : "sage"}>{e.status}</Pill>
                     </div>
                     <h2 className="font-display text-3xl md:text-4xl font-medium mt-3 leading-tight group-hover:text-primary transition-colors">{e.name}</h2>
                     <p className="mt-3 text-muted-foreground leading-relaxed line-clamp-2 max-w-2xl">{e.excerpt}</p>

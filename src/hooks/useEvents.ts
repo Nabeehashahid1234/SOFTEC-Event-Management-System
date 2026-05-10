@@ -17,6 +17,7 @@ export interface UiEvent {
   venueName: string;
   rules: string[];
   prizePool: number;
+  status: "open" | "filling" | "full" | "closed";
 }
 
 const categoryMap: Record<string, UiCategory> = {
@@ -44,6 +45,17 @@ function safeIsoDate(value: unknown): string {
 
 function mapEvent(row: any): UiEvent {
   const safe = row || {};
+  const capacity = Number(safe.max_participants ?? safe.capacity ?? 0);
+  const registered = Number(safe.registered_participants ?? safe.registered ?? 0);
+  const dbStatus = String(safe.event_status ?? "");
+  let status: UiEvent["status"] = "open";
+  if (dbStatus === "cancelled" || dbStatus === "completed") {
+    status = "closed";
+  } else if (capacity > 0 && registered >= capacity) {
+    status = "full";
+  } else if (capacity > 0 && registered / capacity >= 0.7) {
+    status = "filling";
+  }
   return {
     id: String(safe.event_id ?? safe.id ?? ""),
     name: String(safe.event_name ?? safe.name ?? "Untitled event"),
@@ -52,12 +64,13 @@ function mapEvent(row: any): UiEvent {
     description: String(safe.description || ""),
     date: safeIsoDate(safe.event_date ?? safe.date),
     fee: Number(safe.registration_fee ?? safe.fee ?? 0),
-    capacity: Number(safe.max_participants ?? safe.capacity ?? 0),
-    registered: Number(safe.registered_participants ?? safe.registered ?? 0),
+    capacity,
+    registered,
     venueId: safe.venue_id == null ? null : Number(safe.venue_id),
     venueName: String(safe.venue_name || "TBD"),
     rules: [],
     prizePool: Number(safe.total_prize_pool ?? safe.prize_pool ?? 0),
+    status,
   };
 }
 
