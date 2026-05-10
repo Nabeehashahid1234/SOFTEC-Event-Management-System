@@ -30,11 +30,6 @@ import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
 import { Route as AppAccommodationRouteImport } from './routes/app.accommodation'
 import { Route as AppEventsNewRouteImport } from './routes/app.events.new'
 
-const AboutRoute = AboutRouteImport.update({
-  id: '/about',
-  path: '/about',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const SponsorsRoute = SponsorsRouteImport.update({
   id: '/sponsors',
   path: '/sponsors',
@@ -58,6 +53,11 @@ const EventsRoute = EventsRouteImport.update({
 const AppRoute = AppRouteImport.update({
   id: '/app',
   path: '/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -134,11 +134,11 @@ const AppEventsNewRoute = AppEventsNewRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/sponsors': typeof SponsorsRoute
   '/app': typeof AppRouteWithChildren
   '/events': typeof EventsRouteWithChildren
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/sponsors': typeof SponsorsRoute
   '/app/accommodation': typeof AppAccommodationRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/events': typeof AppEventsRouteWithChildren
@@ -156,10 +156,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/sponsors': typeof SponsorsRoute
   '/events': typeof EventsRouteWithChildren
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/sponsors': typeof SponsorsRoute
   '/app/accommodation': typeof AppAccommodationRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/events': typeof AppEventsRouteWithChildren
@@ -178,11 +178,11 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/sponsors': typeof SponsorsRoute
   '/app': typeof AppRouteWithChildren
   '/events': typeof EventsRouteWithChildren
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/sponsors': typeof SponsorsRoute
   '/app/accommodation': typeof AppAccommodationRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/events': typeof AppEventsRouteWithChildren
@@ -202,11 +202,11 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
-    | '/sponsors'
     | '/app'
     | '/events'
     | '/login'
     | '/signup'
+    | '/sponsors'
     | '/app/accommodation'
     | '/app/dashboard'
     | '/app/events'
@@ -224,10 +224,10 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
-    | '/sponsors'
     | '/events'
     | '/login'
     | '/signup'
+    | '/sponsors'
     | '/app/accommodation'
     | '/app/dashboard'
     | '/app/events'
@@ -245,11 +245,11 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/about'
-    | '/sponsors'
     | '/app'
     | '/events'
     | '/login'
     | '/signup'
+    | '/sponsors'
     | '/app/accommodation'
     | '/app/dashboard'
     | '/app/events'
@@ -268,22 +268,15 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
-  SponsorsRoute: typeof SponsorsRoute
   AppRoute: typeof AppRouteWithChildren
   EventsRoute: typeof EventsRouteWithChildren
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
+  SponsorsRoute: typeof SponsorsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/about': {
-      id: '/about'
-      path: '/about'
-      fullPath: '/about'
-      preLoaderRoute: typeof AboutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/sponsors': {
       id: '/sponsors'
       path: '/sponsors'
@@ -317,6 +310,13 @@ declare module '@tanstack/react-router' {
       path: '/app'
       fullPath: '/app'
       preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -476,11 +476,11 @@ const EventsRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
-  SponsorsRoute: SponsorsRoute,
   AppRoute: AppRouteWithChildren,
   EventsRoute: EventsRouteWithChildren,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
+  SponsorsRoute: SponsorsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -18,6 +18,7 @@ async function main() {
     console.log("No migration files found.");
     return;
   }
+  // Connect to the database
 
   const connection = await mysql.createConnection({
     host: process.env.DB_HOST,
