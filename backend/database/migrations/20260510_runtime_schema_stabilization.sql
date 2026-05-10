@@ -21,21 +21,24 @@ SET @exists := (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHE
 SET @ddl := IF(@exists = 0, 'ALTER TABLE event_rounds ADD COLUMN end_time TIME NULL AFTER start_time', 'SELECT 1');
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-SET @exists := (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'registrations' AND COLUMN_NAME = 'user_id');
+SET @table_exists := (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'registrations');
+SET @exists := IF(@table_exists = 1, (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'registrations' AND COLUMN_NAME = 'user_id'), 1);
 SET @ddl := IF(@exists = 0, 'ALTER TABLE registrations ADD COLUMN user_id INT NULL AFTER event_id', 'SELECT 1');
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-ALTER TABLE registrations MODIFY COLUMN participant_id INT NULL;
-ALTER TABLE registrations MODIFY COLUMN registration_reference VARCHAR(100) NULL;
+SET @exists := (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'registrations');
+SET @ddl := IF(@exists = 1, 'ALTER TABLE registrations MODIFY COLUMN participant_id INT NULL', 'SELECT 1');
+PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+SET @ddl := IF(@exists = 1, 'ALTER TABLE registrations MODIFY COLUMN registration_reference VARCHAR(100) NULL', 'SELECT 1');
+PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 SET @exists := (SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'registrations' AND INDEX_NAME = 'idx_registrations_user_id');
 SET @ddl := IF(@exists = 0, 'ALTER TABLE registrations ADD INDEX idx_registrations_user_id (user_id)', 'SELECT 1');
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-UPDATE registrations r
-LEFT JOIN participants p ON p.participant_id = r.participant_id
-SET r.user_id = COALESCE(r.user_id, p.user_id)
-WHERE r.user_id IS NULL;
+SET @exists := (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'registrations');
+SET @ddl := IF(@exists = 1, 'UPDATE registrations r LEFT JOIN participants p ON p.participant_id = r.participant_id SET r.user_id = COALESCE(r.user_id, p.user_id) WHERE r.user_id IS NULL', 'SELECT 1');
+PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 SET @exists := (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'payments' AND COLUMN_NAME = 'payment_date');
 SET @ddl := IF(@exists = 0, 'ALTER TABLE payments ADD COLUMN payment_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER status', 'SELECT 1');
@@ -162,20 +165,24 @@ SET @exists := (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHE
 SET @ddl := IF(@exists = 0, 'ALTER TABLE user_accommodations ADD COLUMN booked_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER accommodation_id', 'SELECT 1');
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-SET @exists := (SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'registrations' AND CONSTRAINT_NAME = 'fk_registrations_user');
-SET @ddl := IF(@exists = 0, 'ALTER TABLE registrations ADD CONSTRAINT fk_registrations_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE ON UPDATE CASCADE', 'SELECT 1');
+SET @exists := (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'registrations');
+SET @constraint_exists := IF(@exists = 1, (SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'registrations' AND CONSTRAINT_NAME = 'fk_registrations_user'), 1);
+SET @ddl := IF(@constraint_exists = 0, 'ALTER TABLE registrations ADD CONSTRAINT fk_registrations_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE ON UPDATE CASCADE', 'SELECT 1');
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-SET @exists := (SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'payments' AND CONSTRAINT_NAME = 'fk_payments_sponsor');
-SET @ddl := IF(@exists = 0, 'ALTER TABLE payments ADD CONSTRAINT fk_payments_sponsor FOREIGN KEY (sponsor_id) REFERENCES sponsors(sponsor_id) ON DELETE SET NULL ON UPDATE CASCADE', 'SELECT 1');
+SET @exists := (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'payments');
+SET @constraint_exists := IF(@exists = 1, (SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'payments' AND CONSTRAINT_NAME = 'fk_payments_sponsor'), 1);
+SET @ddl := IF(@constraint_exists = 0, 'ALTER TABLE payments ADD CONSTRAINT fk_payments_sponsor FOREIGN KEY (sponsor_id) REFERENCES sponsors(sponsor_id) ON DELETE SET NULL ON UPDATE CASCADE', 'SELECT 1');
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-SET @exists := (SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'sponsorships' AND CONSTRAINT_NAME = 'fk_sponsorships_user');
-SET @ddl := IF(@exists = 0, 'ALTER TABLE sponsorships ADD CONSTRAINT fk_sponsorships_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL ON UPDATE CASCADE', 'SELECT 1');
+SET @exists := (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'sponsorships');
+SET @constraint_exists := IF(@exists = 1, (SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'sponsorships' AND CONSTRAINT_NAME = 'fk_sponsorships_user'), 1);
+SET @ddl := IF(@constraint_exists = 0, 'ALTER TABLE sponsorships ADD CONSTRAINT fk_sponsorships_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL ON UPDATE CASCADE', 'SELECT 1');
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-SET @exists := (SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'teams' AND CONSTRAINT_NAME = 'fk_teams_created_by');
-SET @ddl := IF(@exists = 0, 'ALTER TABLE teams ADD CONSTRAINT fk_teams_created_by FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE SET NULL ON UPDATE CASCADE', 'SELECT 1');
+SET @exists := (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'teams');
+SET @constraint_exists := IF(@exists = 1, (SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'teams' AND CONSTRAINT_NAME = 'fk_teams_created_by'), 1);
+SET @ddl := IF(@constraint_exists = 0, 'ALTER TABLE teams ADD CONSTRAINT fk_teams_created_by FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE SET NULL ON UPDATE CASCADE', 'SELECT 1');
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 SET @exists := (SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'participants' AND INDEX_NAME = 'uq_participant_user');
