@@ -28,6 +28,7 @@ async function main() {
     multipleStatements: true,
   });
 
+  // Check if the database has any tables. If not, it likely means the base schema hasn't been set up. We should warn the user to run the setup script first.
   const [tableCountRows] = await connection.query(
     `SELECT COUNT(*) AS count FROM information_schema.TABLES WHERE TABLE_SCHEMA = ?`,
     [process.env.DB_NAME]
