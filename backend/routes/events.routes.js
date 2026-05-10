@@ -60,10 +60,12 @@ router.get(
           e.description,
           e.category,
           e.event_date,
+          e.event_status,
           e.max_participants,
           e.registered_participants,
           e.registration_fee,
           COALESCE(e.prize_pool, 0) AS prize_pool,
+          COALESCE(e.total_prize_pool, e.prize_pool, 0) AS total_prize_pool,
           v.venue_id,
           v.venue_name
         FROM events e
