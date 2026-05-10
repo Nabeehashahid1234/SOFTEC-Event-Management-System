@@ -285,40 +285,6 @@ CREATE TABLE notifications (
   INDEX idx_notifications_type (type)
 ) ENGINE=InnoDB;
 
-CREATE VIEW vw_event_leaderboard AS
-SELECT
-  s.event_id,
-  p.participant_id,
-  u.name AS participant_name,
-  ROUND(AVG(s.score), 2) AS average_score,
-  COUNT(s.score_id) AS score_count,
-  ROW_NUMBER() OVER (PARTITION BY s.event_id ORDER BY AVG(s.score) DESC, COUNT(s.score_id) DESC) AS rank
-FROM scores s
-JOIN participants p ON p.participant_id = s.participant_id
-JOIN users u ON u.user_id = p.user_id
-GROUP BY s.event_id, p.participant_id, u.name;
-
-CREATE VIEW vw_judge_workload AS
-SELECT
-  u.user_id AS judge_id,
-  u.name AS judge_name,
-  COUNT(a.assignment_id) AS assigned_events,
-  MAX(a.assigned_at) AS last_assigned_at
-FROM judge_assignments a
-JOIN users u ON u.user_id = a.judge_id
-WHERE u.role = 'judge'
-GROUP BY u.user_id, u.name;
-
-CREATE VIEW vw_sponsorship_totals AS
-SELECT
-  e.event_id,
-  e.event_name,
-  COALESCE(SUM(s.amount), 0) AS confirmed_sponsorship_amount,
-  COUNT(DISTINCT s.sponsor_id) AS sponsor_count
-FROM events e
-LEFT JOIN sponsorships s ON s.event_id = e.event_id AND s.status = 'confirmed'
-GROUP BY e.event_id, e.event_name;
-
 CREATE TABLE passes (
   pass_id VARCHAR(36) PRIMARY KEY,
   participant_id INT NOT NULL,
