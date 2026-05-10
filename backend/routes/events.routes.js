@@ -83,7 +83,7 @@ router.get(
     }
   }
 );
-
+// Get event details, rounds, and leaderboard
 router.get("/:id", [param("id").isInt()], async (req, res, next) => {
   try {
     const errors = validationResult(req);
