@@ -116,14 +116,16 @@ export function useCreateEvent() {
       category: "Tech Events" | "Business Competitions" | "Gaming Tournaments" | "General Events";
       event_date: string;
       max_participants: number;
-      venue_id: number;
+      venue_id: number | null;
       registration_fee: number;
+      prize_pool?: number;
     }) => {
       const res = await api.post("/events", payload);
       return res.data.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }
