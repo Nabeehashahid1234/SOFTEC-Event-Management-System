@@ -15,6 +15,8 @@ DROP TABLE IF EXISTS payments;
 DROP TABLE IF EXISTS registrations;
 DROP TABLE IF EXISTS participants;
 DROP TABLE IF EXISTS judge_assignments;
+DROP TABLE IF EXISTS user_accommodations;
+DROP TABLE IF EXISTS accommodations;
 DROP TABLE IF EXISTS events;
 DROP TABLE IF EXISTS venues;
 DROP TABLE IF EXISTS users;
@@ -56,6 +58,7 @@ CREATE TABLE events (
   start_time TIME NULL,
   end_time TIME NULL,
   max_participants INT NOT NULL CHECK (max_participants > 0),
+  registered_participants INT NOT NULL DEFAULT 0,
   registration_fee DECIMAL(10,2) NOT NULL DEFAULT 0.00 CHECK (registration_fee >= 0),
   prize_pool DECIMAL(12,2) NOT NULL DEFAULT 0.00 CHECK (prize_pool >= 0),
   sponsorship_total DECIMAL(12,2) NOT NULL DEFAULT 0.00 CHECK (sponsorship_total >= 0),
@@ -72,6 +75,7 @@ CREATE TABLE events (
   INDEX idx_events_category (category),
   INDEX idx_events_status (event_status),
   INDEX idx_events_date (event_date),
+  INDEX idx_events_registered_participants (registered_participants),
   INDEX idx_events_assigned_judge (assigned_judge_id),
   INDEX idx_events_venue_date (venue_id, event_date)
 ) ENGINE=InnoDB;
@@ -113,9 +117,10 @@ CREATE TABLE participants (
   event_id INT NOT NULL,
   participant_type ENUM('individual','team') NOT NULL DEFAULT 'individual',
   roll_number VARCHAR(60) NULL,
+  registration_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  CONSTRAINT uq_participant_user UNIQUE (user_id),
+  CONSTRAINT uq_participant_user_event UNIQUE (user_id, event_id),
   CONSTRAINT fk_participants_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT fk_participants_event FOREIGN KEY (event_id) REFERENCES events(event_id) ON DELETE CASCADE ON UPDATE CASCADE,
   INDEX idx_participants_user_id (user_id),
@@ -159,9 +164,11 @@ CREATE TABLE teams (
   team_id INT AUTO_INCREMENT PRIMARY KEY,
   team_name VARCHAR(120) NOT NULL,
   event_id INT NOT NULL,
+  created_by INT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT fk_teams_event FOREIGN KEY (event_id) REFERENCES events(event_id) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT fk_teams_created_by FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE SET NULL ON UPDATE CASCADE,
   INDEX idx_teams_event_id (event_id)
 ) ENGINE=InnoDB;
 
@@ -194,12 +201,14 @@ CREATE TABLE registrations (
 
 CREATE TABLE payments (
   payment_id INT AUTO_INCREMENT PRIMARY KEY,
-  registration_id INT NOT NULL,
+  registration_id INT NULL,
+  sponsor_id INT NULL,
   user_id INT NOT NULL,
-  event_id INT NOT NULL,
+  event_id INT NULL,
   amount DECIMAL(12,2) NOT NULL CHECK (amount >= 0),
-  payment_type ENUM('registration','sponsorship','refund') NOT NULL,
+  payment_type ENUM('registration','accommodation','sponsorship','refund') NOT NULL,
   status ENUM('pending','completed','failed') NOT NULL DEFAULT 'pending',
+  payment_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   provider_reference VARCHAR(160) NULL,
   metadata JSON NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -207,6 +216,10 @@ CREATE TABLE payments (
   CONSTRAINT fk_payments_registration FOREIGN KEY (registration_id) REFERENCES registrations(registration_id) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT fk_payments_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT fk_payments_event FOREIGN KEY (event_id) REFERENCES events(event_id) ON DELETE CASCADE ON UPDATE CASCADE,
+  INDEX idx_payments_user (user_id),
+  INDEX idx_payments_event (event_id),
+  INDEX idx_payments_payment_date (payment_date),
+  INDEX idx_payments_sponsor_id (sponsor_id),
   INDEX idx_payments_user_status (user_id, status),
   INDEX idx_payments_event_status (event_id, status)
 ) ENGINE=InnoDB;
@@ -218,27 +231,68 @@ CREATE TABLE sponsors (
   contact_person VARCHAR(120) NOT NULL,
   email VARCHAR(160) NOT NULL,
   phone VARCHAR(80) NULL,
+  sponsorship_level ENUM('Title','Gold','Silver','Bronze','Partner') NOT NULL DEFAULT 'Gold',
+  amount DECIMAL(12,2) NOT NULL DEFAULT 0.00,
   tier ENUM('Title','Gold','Silver','Partner') NOT NULL DEFAULT 'Gold',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT uq_sponsors_email UNIQUE (email),
   CONSTRAINT fk_sponsors_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL ON UPDATE CASCADE,
+  INDEX idx_sponsors_sponsorship_level (sponsorship_level),
   INDEX idx_sponsors_tier (tier)
 ) ENGINE=InnoDB;
+
+ALTER TABLE payments
+  ADD CONSTRAINT fk_payments_sponsor FOREIGN KEY (sponsor_id) REFERENCES sponsors(sponsor_id) ON DELETE SET NULL ON UPDATE CASCADE;
 
 CREATE TABLE sponsorships (
   sponsorship_id INT AUTO_INCREMENT PRIMARY KEY,
   sponsor_id INT NOT NULL,
+  user_id INT NULL,
   event_id INT NOT NULL,
+  sponsorship_type ENUM('Title','Gold','Silver','Bronze','Partner') NOT NULL DEFAULT 'Gold',
   amount DECIMAL(12,2) NOT NULL CHECK (amount >= 0),
   tier ENUM('Title','Gold','Silver','Partner') NOT NULL DEFAULT 'Gold',
   status ENUM('pending','confirmed','cancelled') NOT NULL DEFAULT 'pending',
   sponsored_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_sponsorships_sponsor FOREIGN KEY (sponsor_id) REFERENCES sponsors(sponsor_id) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT fk_sponsorships_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT fk_sponsorships_event FOREIGN KEY (event_id) REFERENCES events(event_id) ON DELETE CASCADE ON UPDATE CASCADE,
   INDEX idx_sponsorships_event_id (event_id),
   INDEX idx_sponsorships_sponsor_id (sponsor_id),
+  INDEX idx_sponsorships_user_id (user_id),
+  INDEX idx_sponsorships_created_at (created_at),
   INDEX idx_sponsorships_status (status)
+) ENGINE=InnoDB;
+
+CREATE TABLE accommodations (
+  accommodation_id INT AUTO_INCREMENT PRIMARY KEY,
+  venue_name VARCHAR(160) NULL,
+  room_type VARCHAR(100) NOT NULL,
+  capacity INT NOT NULL DEFAULT 1,
+  price_per_night DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  availability INT NOT NULL DEFAULT 0,
+  available_rooms INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_accommodations_room_type (room_type),
+  INDEX idx_accommodations_availability (availability),
+  INDEX idx_accommodations_available_rooms (available_rooms)
+) ENGINE=InnoDB;
+
+CREATE TABLE user_accommodations (
+  user_accommodation_id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  accommodation_id INT NOT NULL,
+  booked_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  check_in DATE NOT NULL,
+  check_out DATE NOT NULL,
+  CONSTRAINT fk_user_accommodations_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT fk_user_accommodations_accommodation FOREIGN KEY (accommodation_id) REFERENCES accommodations(accommodation_id) ON DELETE CASCADE ON UPDATE CASCADE,
+  INDEX idx_user_accommodations_user_id (user_id),
+  INDEX idx_user_accommodations_accommodation_id (accommodation_id),
+  INDEX idx_user_accommodations_check_in (check_in)
 ) ENGINE=InnoDB;
 
 CREATE TABLE scores (
