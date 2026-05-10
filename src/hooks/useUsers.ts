@@ -18,7 +18,7 @@ export function useUsers(filters?: { role?: string; q?: string }) {
       if (filters?.role && filters.role !== "all") params.role = filters.role;
       if (filters?.q) params.q = filters.q;
       const res = await api.get("/users", { params });
-      return (res.data.data || []) as ApiUser[];
+      return (Array.isArray(res.data?.data) ? res.data.data : []) as ApiUser[];
     },
   });
 }

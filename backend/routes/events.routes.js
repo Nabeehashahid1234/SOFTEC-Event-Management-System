@@ -20,8 +20,10 @@ async function assignLeastBusyJudge(connection, eventId) {
 
   if (!judge) return null;
 
-  await connection.query("INSERT IGNORE INTO event_judges (event_id, judge_id) VALUES (?, ?)", [eventId, judge.judge_id]);
-  await connection.query("UPDATE judges SET assigned_events_count = assigned_events_count + 1 WHERE judge_id = ?", [judge.judge_id]);
+  const [assignment] = await connection.query("INSERT IGNORE INTO event_judges (event_id, judge_id) VALUES (?, ?)", [eventId, judge.judge_id]);
+  if (assignment.affectedRows > 0) {
+    await connection.query("UPDATE judges SET assigned_events_count = assigned_events_count + 1 WHERE judge_id = ?", [judge.judge_id]);
+  }
   return judge.judge_id;
 }
 
@@ -137,12 +139,13 @@ router.post(
     body("prize_pool").optional().isFloat({ min: 0 }),
   ],
   async (req, res, next) => {
-    const conn = await pool.getConnection();
+    let conn;
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) return res.status(400).json({ success: false, error: errors.array()[0].msg });
 
       const b = req.body;
+      conn = await pool.getConnection();
       await conn.beginTransaction();
 
       const [result] = await conn.query(
@@ -174,11 +177,11 @@ router.post(
       await conn.commit();
       return res.status(201).json({ success: true, data: { event_id: result.insertId, assigned_judge_id: assignedJudgeId } });
     } catch (err) {
-      await conn.rollback();
+      if (conn) await conn.rollback();
       if (err.code === "ER_DUP_ENTRY") return res.status(409).json({ success: false, error: "Venue already booked for this date" });
       return next(err);
     } finally {
-      conn.release();
+      if (conn) conn.release();
     }
   }
 );
@@ -272,8 +275,10 @@ router.post(
       if (!judgeIds.length) return res.status(400).json({ success: false, error: "No valid judge ids" });
 
       for (const judgeId of judgeIds) {
-        await pool.query("INSERT IGNORE INTO event_judges (event_id, judge_id) VALUES (?, ?)", [eventId, judgeId]);
-        await pool.query("UPDATE judges SET assigned_events_count = assigned_events_count + 1 WHERE judge_id = ?", [judgeId]);
+        const [assignment] = await pool.query("INSERT IGNORE INTO event_judges (event_id, judge_id) VALUES (?, ?)", [eventId, judgeId]);
+        if (assignment.affectedRows > 0) {
+          await pool.query("UPDATE judges SET assigned_events_count = assigned_events_count + 1 WHERE judge_id = ?", [judgeId]);
+        }
       }
 
       return res.status(201).json({ success: true, data: { assigned: judgeIds.length } });

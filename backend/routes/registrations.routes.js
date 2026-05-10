@@ -51,7 +51,7 @@ router.get("/events/:id/my-registration", authRequired, [param("id").isInt()], a
 });
 
 router.post("/events/:id/register", authRequired, [param("id").isInt()], async (req, res, next) => {
-  const conn = await pool.getConnection();
+  let conn;
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ success: false, error: "Invalid event id" });
@@ -59,6 +59,7 @@ router.post("/events/:id/register", authRequired, [param("id").isInt()], async (
     const eventId = Number(req.params.id);
     const userId = req.user.user_id;
 
+    conn = await pool.getConnection();
     await conn.beginTransaction();
 
     const [[event]] = await conn.query(
@@ -104,18 +105,18 @@ router.post("/events/:id/register", authRequired, [param("id").isInt()], async (
       data: { participant_id: participantResult.insertId, payment_id: paymentResult.insertId, payment_status: paymentStatus },
     });
   } catch (err) {
-    await conn.rollback();
+    if (conn) await conn.rollback();
     if (err.code === "ER_DUP_ENTRY") {
       return res.status(409).json({ success: false, error: "You are already registered for this event" });
     }
     return next(err);
   } finally {
-    conn.release();
+    if (conn) conn.release();
   }
 });
 
 router.delete("/events/:id/register", authRequired, [param("id").isInt()], async (req, res, next) => {
-  const conn = await pool.getConnection();
+  let conn;
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ success: false, error: "Invalid event id" });
@@ -123,6 +124,7 @@ router.delete("/events/:id/register", authRequired, [param("id").isInt()], async
     const eventId = Number(req.params.id);
     const userId = req.user.user_id;
 
+    conn = await pool.getConnection();
     await conn.beginTransaction();
 
     const [[registration]] = await conn.query(
@@ -142,10 +144,10 @@ router.delete("/events/:id/register", authRequired, [param("id").isInt()], async
     await conn.commit();
     return res.json({ success: true, data: { deleted: true } });
   } catch (err) {
-    await conn.rollback();
+    if (conn) await conn.rollback();
     return next(err);
   } finally {
-    conn.release();
+    if (conn) conn.release();
   }
 });
 

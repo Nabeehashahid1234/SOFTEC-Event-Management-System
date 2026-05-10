@@ -2,6 +2,7 @@ USE softec_db;
 
 DELIMITER //
 
+DROP PROCEDURE IF EXISTS sp_get_leaderboard//
 CREATE PROCEDURE sp_get_leaderboard(IN p_event_id INT)
 BEGIN
   SELECT
@@ -20,6 +21,7 @@ BEGIN
   ORDER BY average_score DESC, scores_count DESC;
 END//
 
+DROP PROCEDURE IF EXISTS sp_assign_unassigned_events//
 CREATE PROCEDURE sp_assign_unassigned_events()
 BEGIN
   DECLARE done INT DEFAULT FALSE;
@@ -45,6 +47,7 @@ BEGIN
   COMMIT;
 END//
 
+DROP PROCEDURE IF EXISTS sp_auto_assign_judge//
 CREATE PROCEDURE sp_auto_assign_judge(IN p_event_id INT)
 BEGIN
   DECLARE candidate_judge INT;
@@ -71,6 +74,7 @@ BEGIN
   END IF;
 END//
 
+DROP PROCEDURE IF EXISTS sp_refresh_sponsorship_total//
 CREATE PROCEDURE sp_refresh_sponsorship_total(IN p_event_id INT)
 BEGIN
   UPDATE events e

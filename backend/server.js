@@ -11,6 +11,9 @@ dotenv.config({ path: path.resolve(__dirname, ".env") });
 
 const app = express();
 const PORT = Number(process.env.PORT || 5000);
+const REQUIRED_ENV = ["DB_HOST", "DB_USER", "DB_NAME", "JWT_SECRET"];
+const missingEnv = REQUIRED_ENV.filter((key) => !process.env[key]);
+let dbReady = false;
 
 app.use(helmet());
 app.use(cors({ origin: process.env.FRONTEND_URL || "http://localhost:5173" }));
@@ -24,6 +27,7 @@ if (process.env.NODE_ENV === "development") {
 app.get("/api/health/db", async (_req, res) => {
   try {
     await pool.query("SELECT 1 AS connected");
+    dbReady = true;
 
     return res.status(200).json({
       success: true,
@@ -35,8 +39,18 @@ app.get("/api/health/db", async (_req, res) => {
     return res.status(500).json({
       success: false,
       error: "Database connection failed",
+      code: error?.code,
     });
   }
+});
+
+app.get("/api/health", (_req, res) => {
+  res.status(dbReady ? 200 : 503).json({
+    success: dbReady,
+    service: "softec-backend",
+    database: dbReady ? "connected" : "unavailable",
+    missingEnv,
+  });
 });
 
 app.use("/api/auth", require("./routes/auth.routes"));
@@ -63,28 +77,42 @@ app.use(errorHandler);
 
 function printMountedRoutes() {
   const routes = [];
-  app._router?.stack?.forEach((middleware) => {
-    if (!middleware.route || !middleware.route.path) return;
-    const methods = Object.keys(middleware.route.methods)
-      .filter((m) => middleware.route.methods[m])
-      .map((m) => m.toUpperCase());
-    methods.forEach((method) => routes.push(`${method} ${middleware.route.path}`));
+  app._router?.stack?.forEach((layer) => {
+    if (layer.route && layer.route.path) {
+      const methods = Object.keys(layer.route.methods)
+        .filter((m) => layer.route.methods[m])
+        .map((m) => m.toUpperCase());
+      methods.forEach((method) => routes.push(`${method} ${layer.route.path}`));
+      return;
+    }
+    if (layer.name === "router" && layer.regexp) {
+      routes.push(`MOUNT ${layer.regexp}`);
+    }
   });
-  console.log("Mounted top-level routes:", routes);
+  console.log("[startup] Mounted routes:", routes.length ? routes : "(route stack unavailable)");
 }
 
 async function startServer() {
+  if (missingEnv.length) {
+    console.warn("[startup] Missing environment variables:", missingEnv.join(", "));
+  }
+
   try {
     await pool.testConnection();
-    printMountedRoutes();
-
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
+    dbReady = true;
   } catch (error) {
-    console.error("Server startup aborted because MySQL connection failed.");
-    process.exit(1);
+    dbReady = false;
+    console.warn("[startup] Continuing without a live database. API routes will return readable DB errors until credentials/schema are fixed.");
+    if (String(process.env.REQUIRE_DB_ON_START || "").toLowerCase() === "true") {
+      console.error("[startup] REQUIRE_DB_ON_START=true, aborting.");
+      process.exit(1);
+    }
   }
+
+  printMountedRoutes();
+  app.listen(PORT, () => {
+    console.log(`[startup] Server running on port ${PORT}`);
+  });
 }
 
 startServer();

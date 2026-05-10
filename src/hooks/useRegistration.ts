@@ -6,7 +6,11 @@ export function useMyRegistration(eventId: string | number) {
     queryKey: ["my-registration", eventId],
     queryFn: async () => {
       const res = await api.get(`/events/${eventId}/my-registration`);
-      return res.data.data as { registered: boolean; registration: any | null };
+      const data = res.data?.data;
+      return {
+        registered: Boolean(data?.registered),
+        registration: data?.registration || null,
+      } as { registered: boolean; registration: any | null };
     },
     enabled: Boolean(eventId),
   });

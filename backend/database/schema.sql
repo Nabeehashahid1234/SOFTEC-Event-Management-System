@@ -8,13 +8,19 @@ DROP VIEW IF EXISTS vw_judge_workload;
 DROP VIEW IF EXISTS vw_event_leaderboard;
 DROP TABLE IF EXISTS notifications;
 DROP TABLE IF EXISTS event_passes;
+DROP TABLE IF EXISTS passes;
 DROP TABLE IF EXISTS scores;
+DROP TABLE IF EXISTS judging;
+DROP TABLE IF EXISTS event_judges;
 DROP TABLE IF EXISTS sponsorships;
 DROP TABLE IF EXISTS sponsors;
 DROP TABLE IF EXISTS payments;
 DROP TABLE IF EXISTS registrations;
+DROP TABLE IF EXISTS team_members;
+DROP TABLE IF EXISTS teams;
 DROP TABLE IF EXISTS participants;
 DROP TABLE IF EXISTS judge_assignments;
+DROP TABLE IF EXISTS judges;
 DROP TABLE IF EXISTS user_accommodations;
 DROP TABLE IF EXISTS accommodations;
 DROP TABLE IF EXISTS events;
@@ -85,6 +91,8 @@ CREATE TABLE event_rounds (
   event_id INT NOT NULL,
   round_type ENUM('Prelims','Semi-Finals','Finals','Custom') NOT NULL DEFAULT 'Custom',
   round_date DATETIME NOT NULL,
+  start_time TIME NULL,
+  end_time TIME NULL,
   venue_id INT NULL,
   status ENUM('scheduled','ongoing','completed') NOT NULL DEFAULT 'scheduled',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -185,15 +193,18 @@ CREATE TABLE team_members (
 CREATE TABLE registrations (
   registration_id INT AUTO_INCREMENT PRIMARY KEY,
   event_id INT NOT NULL,
-  participant_id INT NOT NULL,
+  user_id INT NULL,
+  participant_id INT NULL,
   status ENUM('pending_payment','confirmed','cancelled') NOT NULL DEFAULT 'pending_payment',
   registered_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   confirmed_at TIMESTAMP NULL,
   seat_number VARCHAR(60) NULL,
-  registration_reference VARCHAR(100) NOT NULL UNIQUE,
+  registration_reference VARCHAR(100) NULL UNIQUE,
   CONSTRAINT uq_registration_event_participant UNIQUE (event_id, participant_id),
   CONSTRAINT fk_registrations_event FOREIGN KEY (event_id) REFERENCES events(event_id) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT fk_registrations_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT fk_registrations_participant FOREIGN KEY (participant_id) REFERENCES participants(participant_id) ON DELETE CASCADE ON UPDATE CASCADE,
+  INDEX idx_registrations_user_id (user_id),
   INDEX idx_registrations_event_id (event_id),
   INDEX idx_registrations_participant_id (participant_id),
   INDEX idx_registrations_status (status)
@@ -228,7 +239,7 @@ CREATE TABLE sponsors (
   sponsor_id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NULL,
   company_name VARCHAR(160) NOT NULL,
-  contact_person VARCHAR(120) NOT NULL,
+  contact_person VARCHAR(120) NULL,
   email VARCHAR(160) NOT NULL,
   phone VARCHAR(80) NULL,
   sponsorship_level ENUM('Title','Gold','Silver','Bronze','Partner') NOT NULL DEFAULT 'Gold',

@@ -2,6 +2,7 @@ USE softec_db;
 
 DELIMITER //
 
+DROP TRIGGER IF EXISTS prevent_venue_conflict//
 CREATE TRIGGER prevent_venue_conflict
 BEFORE INSERT ON events
 FOR EACH ROW
@@ -26,6 +27,7 @@ BEGIN
   END IF;
 END//
 
+DROP TRIGGER IF EXISTS prevent_venue_conflict_update//
 CREATE TRIGGER prevent_venue_conflict_update
 BEFORE UPDATE ON events
 FOR EACH ROW
@@ -52,6 +54,7 @@ BEGIN
   END IF;
 END//
 
+DROP TRIGGER IF EXISTS auto_register_participant//
 CREATE TRIGGER auto_register_participant
 AFTER INSERT ON payments
 FOR EACH ROW

@@ -9,6 +9,25 @@ interface DashboardState {
   data: any;
 }
 
+function fallbackDashboard(role?: string) {
+  if (role === "admin") {
+    return { kpi: {}, roleDistribution: [], categoryDistribution: [], venueUtilization: [], topPrograms: [], revenueBreakdown: [], recentActivity: [], paymentStatus: [] };
+  }
+  if (role === "participant") {
+    return { myEvents: [], upcomingEvents: [], payments: [], accommodation: [], teams: [], passes: [], leaderboards: [], stats: {} };
+  }
+  if (role === "organizer") {
+    return { events: [], judges: [], rounds: [], venueConflicts: [], stats: {} };
+  }
+  if (role === "judge") {
+    return { assigned: [], submitted: [], pending: [], leaderboard: [], stats: {} };
+  }
+  if (role === "sponsor") {
+    return { sponsorInfo: null, sponsoredEvents: [], payments: [], history: [], stats: {} };
+  }
+  return {};
+}
+
 export function useDashboard() {
   const { user, loading: authLoading } = useAuth();
   const [state, setState] = useState<DashboardState>({
@@ -50,9 +69,9 @@ export function useDashboard() {
 
         const response = await api.get(endpoint);
         if (response.data.success) {
-          setState({ loading: false, error: null, data: response.data.data });
+          setState({ loading: false, error: null, data: response.data.data || fallbackDashboard(user.role) });
         } else {
-          setState({ loading: false, error: response.data.error || "Failed to load dashboard", data: null });
+          setState({ loading: false, error: response.data.error || "Failed to load dashboard", data: fallbackDashboard(user.role) });
         }
       } catch (err) {
         const message = err instanceof AxiosError
@@ -60,7 +79,7 @@ export function useDashboard() {
           : err instanceof Error
           ? err.message
           : "Failed to load dashboard";
-        setState({ loading: false, error: message, data: null });
+        setState({ loading: false, error: message, data: fallbackDashboard(user.role) });
       }
     };
 

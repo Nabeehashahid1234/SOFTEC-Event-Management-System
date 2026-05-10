@@ -74,7 +74,7 @@ router.post(
   requireRole(["sponsor", "admin"]),
   [body("event_id").isInt(), body("sponsorship_type").isIn(["Gold", "Silver", "Title"]), body("amount").isFloat({ min: 1 })],
   async (req, res, next) => {
-    const conn = await pool.getConnection();
+    let conn;
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) return res.status(400).json({ success: false, error: errors.array()[0].msg });
@@ -82,6 +82,7 @@ router.post(
       const { event_id, sponsorship_type, amount } = req.body;
       const userId = req.user.user_id;
 
+      conn = await pool.getConnection();
       await conn.beginTransaction();
 
       const [[sponsorRow]] = await conn.query("SELECT sponsor_id FROM sponsors WHERE user_id = ? LIMIT 1", [userId]);
@@ -110,10 +111,10 @@ router.post(
 
       return res.status(201).json({ success: true, data: { sponsorship_id: spResult.insertId, sponsor_id: sponsorRow.sponsor_id, payment_id: paymentResult.insertId } });
     } catch (err) {
-      await conn.rollback();
+      if (conn) await conn.rollback();
       return next(err);
     } finally {
-      conn.release();
+      if (conn) conn.release();
     }
   }
 );

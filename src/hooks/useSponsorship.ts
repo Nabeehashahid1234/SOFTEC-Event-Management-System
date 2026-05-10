@@ -32,7 +32,7 @@ export function useSponsors() {
     queryKey: ["sponsors"],
     queryFn: async () => {
       const res = await api.get("/sponsorships/sponsors");
-      return (res.data.data || []) as ApiSponsor[];
+      return (Array.isArray(res.data?.data) ? res.data.data : []) as ApiSponsor[];
     },
   });
 }
@@ -42,7 +42,7 @@ export function useMySponsorships() {
     queryKey: ["my-sponsorships"],
     queryFn: async () => {
       const res = await api.get("/sponsorships");
-      return (res.data.data || []) as ApiSponsorship[];
+      return (Array.isArray(res.data?.data) ? res.data.data : []) as ApiSponsorship[];
     },
   });
 }
@@ -66,7 +66,7 @@ export function useSponsorProfile() {
     queryKey: ["sponsor-profile"],
     queryFn: async () => {
       const res = await api.get("/sponsorships/my-profile");
-      return res.data.data as ApiSponsor | null;
+      return (res.data?.data || null) as ApiSponsor | null;
     },
   });
 }

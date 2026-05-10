@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Eyebrow, Pill } from "@/components/ui-bits";
 import { useMySponsorships, useCreateSponsorship, useSponsorProfile, useUpsertSponsorProfile } from "@/hooks/useSponsorship";
@@ -29,6 +29,16 @@ function Sponsorship() {
   const [phone, setPhone] = useState(profile?.phone ?? "");
   const [level, setLevel] = useState<"Gold" | "Silver" | "Bronze">(profile?.sponsorship_level ?? "Silver");
   const [committedAmount, setCommittedAmount] = useState(profile?.amount ?? 0);
+
+  useEffect(() => {
+    if (!profile) return;
+    setCompanyName(profile.company_name ?? "");
+    setContactPerson(profile.contact_person ?? "");
+    setSponsorEmail(profile.email ?? user?.email ?? "");
+    setPhone(profile.phone ?? "");
+    setLevel(profile.sponsorship_level ?? "Silver");
+    setCommittedAmount(Number(profile.amount ?? 0));
+  }, [profile, user?.email]);
 
   const handleSponsor = async (e: FormEvent) => {
     e.preventDefault();
@@ -97,7 +107,7 @@ function Sponsorship() {
       )}
 
       <div className="mt-8 grid md:grid-cols-2 gap-5">
-        {sponsorships.map((sp) => (
+        {(Array.isArray(sponsorships) ? sponsorships : []).map((sp) => (
           <div key={sp.sponsorship_id} className="rounded-lg border border-border bg-card p-6 space-y-3">
             <div className="flex items-start justify-between">
               <Pill tone="muted">{sp.sponsorship_type}</Pill>
@@ -124,7 +134,7 @@ function Sponsorship() {
                 required
               >
                 <option value="">Select event…</option>
-                {events.map((ev: any) => (
+                {(Array.isArray(events) ? events : []).map((ev: any) => (
                   <option key={ev.id} value={ev.id}>{ev.name}</option>
                 ))}
               </select>

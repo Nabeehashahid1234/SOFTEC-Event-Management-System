@@ -33,21 +33,31 @@ const dbCategoryMap: Record<UiCategory, string> = {
   General: "General Events",
 };
 
+function asArray<T = any>(value: unknown): T[] {
+  return Array.isArray(value) ? value as T[] : [];
+}
+
+function safeIsoDate(value: unknown): string {
+  const date = value ? new Date(String(value)) : null;
+  return date && !Number.isNaN(date.getTime()) ? date.toISOString() : new Date().toISOString();
+}
+
 function mapEvent(row: any): UiEvent {
+  const safe = row || {};
   return {
-    id: String(row.event_id),
-    name: String(row.event_name),
-    category: categoryMap[row.category] || "General",
-    excerpt: String(row.description || "").slice(0, 160),
-    description: String(row.description || ""),
-    date: new Date(row.event_date).toISOString(),
-    fee: Number(row.registration_fee || 0),
-    capacity: Number(row.max_participants || 0),
-    registered: Number(row.registered_participants || 0),
-    venueId: row.venue_id == null ? null : Number(row.venue_id),
-    venueName: String(row.venue_name || "TBD"),
+    id: String(safe.event_id ?? safe.id ?? ""),
+    name: String(safe.event_name ?? safe.name ?? "Untitled event"),
+    category: categoryMap[safe.category] || safe.category || "General",
+    excerpt: String(safe.description || "").slice(0, 160),
+    description: String(safe.description || ""),
+    date: safeIsoDate(safe.event_date ?? safe.date),
+    fee: Number(safe.registration_fee ?? safe.fee ?? 0),
+    capacity: Number(safe.max_participants ?? safe.capacity ?? 0),
+    registered: Number(safe.registered_participants ?? safe.registered ?? 0),
+    venueId: safe.venue_id == null ? null : Number(safe.venue_id),
+    venueName: String(safe.venue_name || "TBD"),
     rules: [],
-    prizePool: Number(row.total_prize_pool ?? row.prize_pool ?? 0),
+    prizePool: Number(safe.total_prize_pool ?? safe.prize_pool ?? 0),
   };
 }
 
@@ -58,7 +68,7 @@ export function useEvents(filters?: { category?: UiCategory }) {
       const params: any = {};
       if (filters?.category) params.category = dbCategoryMap[filters.category];
       const res = await api.get("/events", { params });
-      return (res.data.data || []).map(mapEvent) as UiEvent[];
+      return asArray(res.data?.data).map(mapEvent) as UiEvent[];
     },
   });
 }
@@ -68,15 +78,16 @@ export function useEvent(eventId: string) {
     queryKey: ["event", eventId],
     queryFn: async () => {
       const res = await api.get(`/events/${eventId}`);
-      const payload = res.data.data;
+      const payload = res.data?.data || {};
+      const event = payload.event || {};
       return {
-        event: mapEvent(payload.event),
-        rounds: (payload.rounds || []).map((r: any) => ({
+        event: mapEvent(event),
+        rounds: asArray(payload.rounds).map((r: any) => ({
           name: String(r.round_type),
-          date: new Date(r.round_date).toISOString(),
-          venue: payload.event.venue_name || "TBD",
+          date: safeIsoDate(r.round_date),
+          venue: event.venue_name || "TBD",
         })),
-        leaderboard: payload.leaderboard || [],
+        leaderboard: asArray(payload.leaderboard),
       };
     },
     enabled: Boolean(eventId),
@@ -109,7 +120,7 @@ export function useVenues() {
     queryKey: ["venues"],
     queryFn: async () => {
       const res = await api.get("/venues");
-      return res.data.data || [];
+      return asArray(res.data?.data);
     },
   });
 }

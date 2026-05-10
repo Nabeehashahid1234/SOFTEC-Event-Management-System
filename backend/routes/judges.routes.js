@@ -60,8 +60,10 @@ router.post(
             `
           );
           if (leastBusy && leastBusy.judge_id) {
-            await pool.query("INSERT IGNORE INTO event_judges (event_id, judge_id) VALUES (?, ?)", [ev.event_id, leastBusy.judge_id]);
-            await pool.query("UPDATE judges SET assigned_events_count = assigned_events_count + 1 WHERE judge_id = ?", [leastBusy.judge_id]);
+            const [assignment] = await pool.query("INSERT IGNORE INTO event_judges (event_id, judge_id) VALUES (?, ?)", [ev.event_id, leastBusy.judge_id]);
+            if (assignment.affectedRows > 0) {
+              await pool.query("UPDATE judges SET assigned_events_count = assigned_events_count + 1 WHERE judge_id = ?", [leastBusy.judge_id]);
+            }
           }
         }
       } catch (assignErr) {

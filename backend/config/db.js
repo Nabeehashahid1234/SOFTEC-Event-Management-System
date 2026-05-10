@@ -20,10 +20,9 @@ async function testConnection() {
   try {
     connection = await pool.getConnection();
     await connection.query("SELECT 1 AS connected");
-    console.log("✅ MySQL Connected Successfully");
+    console.log("[db] MySQL connected successfully");
   } catch (error) {
-    console.error("❌ MySQL Connection Failed");
-    console.error(error);
+    console.error("[db] MySQL connection failed:", error?.code || error?.message || error);
     throw error;
   } finally {
     if (connection) connection.release();

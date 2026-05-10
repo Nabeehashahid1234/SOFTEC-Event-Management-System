@@ -31,7 +31,14 @@ export function useJudgeDashboardData() {
     queryKey: ["judge-dashboard"],
     queryFn: async () => {
       const res = await api.get("/dashboard/judge");
-      return res.data.data as {
+      const data = res.data?.data || {};
+      return {
+        assigned: Array.isArray(data.assigned) ? data.assigned : [],
+        submitted: Array.isArray(data.submitted) ? data.submitted : [],
+        pending: Array.isArray(data.pending) ? data.pending : [],
+        leaderboard: Array.isArray(data.leaderboard) ? data.leaderboard : [],
+        stats: data.stats || { assigned_count: 0, submitted_count: 0, pending_count: 0 },
+      } as {
         assigned: ApiJudgeAssignment[];
         submitted: ApiScore[];
         pending: ApiPendingParticipant[];

@@ -28,7 +28,7 @@ router.get("/", authRequired, async (req, res, next) => {
 });
 
 router.patch("/:id/confirm", authRequired, [param("id").isInt()], async (req, res, next) => {
-  const conn = await pool.getConnection();
+  let conn;
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ success: false, error: "Invalid payment id" });
@@ -36,6 +36,7 @@ router.patch("/:id/confirm", authRequired, [param("id").isInt()], async (req, re
     const paymentId = Number(req.params.id);
     const userId = req.user.user_id;
 
+    conn = await pool.getConnection();
     await conn.beginTransaction();
 
     const [[payment]] = await conn.query(
@@ -90,10 +91,10 @@ router.patch("/:id/confirm", authRequired, [param("id").isInt()], async (req, re
     await conn.commit();
     return res.json({ success: true, data: { payment_id: paymentId, status: "completed" } });
   } catch (err) {
-    await conn.rollback();
+    if (conn) await conn.rollback();
     return next(err);
   } finally {
-    conn.release();
+    if (conn) conn.release();
   }
 });
 

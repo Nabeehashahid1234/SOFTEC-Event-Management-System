@@ -13,7 +13,7 @@ export function useLeaderboard(eventId?: string) {
     queryKey: ["leaderboard", eventId],
     queryFn: async () => {
       const res = await api.get(`/reports/leaderboard/${eventId}`);
-      return (res.data.data || []) as ApiLeaderboardRow[];
+      return (Array.isArray(res.data?.data) ? res.data.data : []) as ApiLeaderboardRow[];
     },
     enabled: Boolean(eventId),
   });

@@ -79,25 +79,29 @@ function AdminDash({ data }: { data: any }) {
     recentActivity = [],
     paymentStatus = [],
   } = data || {};
+  const safeRoleDistribution = Array.isArray(roleDistribution) ? roleDistribution : [];
+  const safeCategoryDistribution = Array.isArray(categoryDistribution) ? categoryDistribution : [];
+  const safeVenueUtilization = Array.isArray(venueUtilization) ? venueUtilization : [];
+  const safeRevenueBreakdown = Array.isArray(revenueBreakdown) ? revenueBreakdown : [];
 
   const colors = ["var(--primary)", "var(--sage)", "var(--gold)", "var(--rose)"];
 
-  const roleData = roleDistribution.map((r: any) => ({
+  const roleData = safeRoleDistribution.map((r: any) => ({
     name: r.role,
     value: r.count,
   }));
 
-  const catData = categoryDistribution.map((c: any) => ({
+  const catData = safeCategoryDistribution.map((c: any) => ({
     name: c.category,
     count: c.count,
   }));
 
-  const venueData = venueUtilization.map((v: any) => ({
+  const venueData = safeVenueUtilization.map((v: any) => ({
     name: v.venue_name,
     events: v.total_events,
   }));
 
-  const revComp = revenueBreakdown.map((r: any) => ({
+  const revComp = safeRevenueBreakdown.map((r: any) => ({
     name: r.payment_type,
     value: r.total,
   }));
@@ -146,7 +150,10 @@ function ParticipantDash({ data }: { data: any }) {
     stats = {},
   } = data || {};
 
-  const upcoming = myEvents.filter(
+  const safeMyEvents = Array.isArray(myEvents) ? myEvents : [];
+  const safePasses = Array.isArray(passes) ? passes : [];
+
+  const upcoming = safeMyEvents.filter(
     (e: any) => new Date(e.event_date) > new Date()
   );
 
@@ -163,8 +170,8 @@ function ParticipantDash({ data }: { data: any }) {
       </div>
 
       <Panel title="My Events">
-        {myEvents.length ? (
-          myEvents.map((e: any) => (
+        {safeMyEvents.length ? (
+          safeMyEvents.map((e: any) => (
             <Link
               key={e.event_id}
               to="/events/$eventId"
@@ -180,8 +187,8 @@ function ParticipantDash({ data }: { data: any }) {
       </Panel>
 
       <Panel title="My Passes">
-        {passes.length ? (
-          passes.map((p: any) => (
+        {safePasses.length ? (
+          safePasses.map((p: any) => (
             <div key={p.pass_id} className="border-b py-2 flex items-center justify-between">
               <div>
                 <div className="font-medium">{p.event_name}</div>
@@ -202,6 +209,7 @@ function ParticipantDash({ data }: { data: any }) {
 
 function OrganizerDash({ data }: { data: any }) {
   const { events = [], stats = {} } = data || {};
+  const safeEvents = Array.isArray(events) ? events : [];
 
   return (
     <Page>
@@ -214,7 +222,7 @@ function OrganizerDash({ data }: { data: any }) {
       </div>
 
       <Panel title="Events">
-        {events.map((e: any) => (
+        {safeEvents.map((e: any) => (
           <div key={e.event_id} className="border-b py-2">
             {e.event_name}
           </div>
@@ -228,6 +236,8 @@ function OrganizerDash({ data }: { data: any }) {
 
 function JudgeDash({ data }: { data: any }) {
   const { assigned = [], leaderboard = [] } = data || {};
+  const safeAssigned = Array.isArray(assigned) ? assigned : [];
+  const safeLeaderboard = Array.isArray(leaderboard) ? leaderboard : [];
 
   const [score, setScore] = useState("0");
 
@@ -236,13 +246,13 @@ function JudgeDash({ data }: { data: any }) {
       <h1 className="font-display text-4xl mb-6">Judge Dashboard</h1>
 
       <Panel title="Assigned">
-        {assigned.map((a: any) => (
+        {safeAssigned.map((a: any) => (
           <div key={a.event_id}>{a.event_name}</div>
         ))}
       </Panel>
 
       <Panel title="Leaderboard">
-        {leaderboard.map((l: any) => (
+        {safeLeaderboard.map((l: any) => (
           <div key={l.participant}>
             {l.participant} — {Number(l.score || 0).toFixed(2)}
           </div>
@@ -255,14 +265,15 @@ function JudgeDash({ data }: { data: any }) {
 /* ================= SPONSOR ================= */
 
 function SponsorDash({ data }: { data: any }) {
-  const { sponsorInfo = {}, sponsoredEvents = [] } = data || {};
+  const { sponsorInfo = null, sponsoredEvents = [] } = data || {};
+  const safeSponsoredEvents = Array.isArray(sponsoredEvents) ? sponsoredEvents : [];
 
   return (
     <Page>
-      <h1 className="font-display text-4xl mb-6">{sponsorInfo.name}</h1>
+      <h1 className="font-display text-4xl mb-6">{sponsorInfo?.name || "Sponsor Dashboard"}</h1>
 
       <Panel title="Sponsored Events">
-        {sponsoredEvents.map((e: any) => (
+        {safeSponsoredEvents.map((e: any) => (
           <div key={e.event_id}>{e.event_name}</div>
         ))}
       </Panel>
