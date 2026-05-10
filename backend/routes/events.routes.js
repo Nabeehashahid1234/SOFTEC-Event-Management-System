@@ -76,6 +76,7 @@ router.get(
         params
       );
 
+      // Format event_date as YYYY-MM-DD in the response
       return res.json({ success: true, data: rows });
     } catch (err) {
       return next(err);
