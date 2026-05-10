@@ -4,7 +4,7 @@
 SET @exists := (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'events' AND COLUMN_NAME = 'registered_participants');
 SET @ddl := IF(@exists = 0, 'ALTER TABLE events ADD COLUMN registered_participants INT NOT NULL DEFAULT 0 AFTER max_participants', 'SELECT 1');
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
-
+-- comment
 SET @exists := (SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'events' AND INDEX_NAME = 'idx_events_registered_participants');
 SET @ddl := IF(@exists = 0, 'ALTER TABLE events ADD INDEX idx_events_registered_participants (registered_participants)', 'SELECT 1');
 PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
