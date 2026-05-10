@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"D:\\\\github\\\\SOFTEC-Event-Management-System\\\\.claude\\\\worktrees\\\\blissful-burnell-ea6be1\" -Force)",
+      "Bash(Select-Object Name, PSIsContainer)",
+      "Bash(Format-Table -AutoSize)",
+      "Bash(find \"D:/github/SOFTEC-Event-Management-System\" -not -path \"*/.claude/*\" -not -path \"*/node_modules/*\" -not -path \"*/.git/*\" | head -120)",
+      "Bash(Remove-Item \"D:\\\\github\\\\SOFTEC-Event-Management-System\\\\backend\\\\database\\\\migrations\\\\20260510_add_passes.sql\")",
+      "Bash(Remove-Item \"D:\\\\github\\\\SOFTEC-Event-Management-System\\\\backend\\\\database\\\\migrations\\\\20260510_update_judges_events.sql\")",
+      "Bash(Remove-Item \"D:\\\\github\\\\SOFTEC-Event-Management-System\\\\backend\\\\database\\\\migrations\\\\20260510_runtime_schema_stabilization.sql\")",
+      "Bash(Get-ChildItem \"D:\\\\github\\\\SOFTEC-Event-Management-System\\\\backend\\\\database\\\\migrations\\\\\")"
+    ]
+  }
+}
