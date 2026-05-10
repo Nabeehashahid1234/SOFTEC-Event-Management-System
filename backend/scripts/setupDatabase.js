@@ -4,7 +4,7 @@
  * Database Setup Script
  * Creates the new SOFTEC schema from schema.sql
  */
-
+// This script is intended to be run once to set up the initial database schema. It will drop and recreate the database specified in the .env file, so use with caution. 
 const path = require("path");
 const fs = require("fs");
 const dotenv = require("dotenv");
