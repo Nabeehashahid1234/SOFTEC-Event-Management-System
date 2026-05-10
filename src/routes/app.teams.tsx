@@ -1,35 +1,32 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Eyebrow } from "@/components/ui-bits";
+import { Users } from "lucide-react";
 
 export const Route = createFileRoute("/app/teams")({ component: Teams });
-
-const TEAMS = [
-  { id: "t1", name: "ByteForce", event: "SOFTEC Hackathon", members: ["BA","HI","OS","ZM"], role: "Captain" },
-  { id: "t2", name: "Recursion", event: "Speed Programming", members: ["BA","ZM"], role: "Member" },
-];
 
 function Teams() {
   return (
     <div className="max-w-[1280px] mx-auto px-6 lg:px-10 py-8">
       <Eyebrow>Your teams</Eyebrow>
       <h1 className="font-display text-4xl font-semibold mt-3">Teams.</h1>
-      <div className="mt-8 grid md:grid-cols-2 gap-5">
-        {TEAMS.map(t => (
-          <div key={t.id} className="rounded-lg border border-border bg-card p-6">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="font-display text-xl font-semibold">{t.name}</p>
-                <p className="text-sm text-muted-foreground mt-1">{t.event}</p>
-              </div>
-              <span className="font-mono text-[10px] uppercase tracking-wider text-primary">{t.role}</span>
-            </div>
-            <div className="mt-5 flex -space-x-2">
-              {t.members.map(m => (
-                <span key={m} className="h-9 w-9 rounded-full bg-primary/10 text-primary border-2 border-card grid place-items-center font-display font-semibold text-xs">{m}</span>
-              ))}
-            </div>
-          </div>
-        ))}
+      <p className="text-muted-foreground mt-3 max-w-2xl">
+        Form and manage your teams for team-based competitions.
+      </p>
+
+      <div className="mt-10 rounded-lg border border-dashed border-border bg-card p-16 flex flex-col items-center text-center">
+        <div className="h-14 w-14 rounded-full bg-muted grid place-items-center mb-5">
+          <Users className="h-6 w-6 text-muted-foreground" />
+        </div>
+        <p className="font-display text-xl font-semibold">Team management coming soon</p>
+        <p className="text-sm text-muted-foreground mt-3 max-w-sm leading-relaxed">
+          Team formation for group events will be available here. Register for a team-based event on the event page to get started once this feature launches.
+        </p>
+        <Link
+          to="/events"
+          className="mt-8 inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-medium"
+        >
+          Browse events →
+        </Link>
       </div>
     </div>
   );

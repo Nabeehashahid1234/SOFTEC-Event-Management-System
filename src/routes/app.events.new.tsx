@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Eyebrow } from "@/components/ui-bits";
 import { useCreateEvent, useEvents, useVenues } from "@/hooks/useEvents";
-import { fmtDate, cn } from "@/lib/format";
+import { fmtDate, fmtPKR, cn } from "@/lib/format";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/events/new")({
@@ -13,6 +13,7 @@ const STEPS = ["Basics", "Schedule", "Venue", "Judges", "Pricing", "Review"];
 
 function NewEvent() {
   const [step, setStep] = useState(0);
+  const navigate = useNavigate();
   const { data: venues = [] } = useVenues();
   const { data: events = [] } = useEvents();
   const createEvent = useCreateEvent();
@@ -51,10 +52,8 @@ function NewEvent() {
         registration_fee: fee,
       });
 
-      toast.success("Programme created.");
-      setStep(0);
-      setName("");
-      setDesc("");
+      toast.success("Programme created successfully.");
+      navigate({ to: "/app/events" });
     } catch (error: any) {
       toast.error(error?.response?.data?.error || "Could not create programme.");
     }
@@ -187,8 +186,25 @@ function NewEvent() {
             </>
           )}
 
-          {/* STEP 3+ */}
-          {step >= 3 && (
+          {/* STEP 3 — Judges */}
+          {step === 3 && (
+            <div className="py-4 space-y-3">
+              <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Judge assignment</p>
+              <p className="text-sm text-foreground font-medium">Judges are assigned after the programme is published.</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Once your programme is live, go to <strong>Adjudication</strong> in the sidebar to assign judges by email address. Judges receive access immediately after assignment.
+              </p>
+              <div className="mt-4 rounded-md border border-border bg-muted/30 p-4 font-mono text-xs text-muted-foreground space-y-1">
+                <p>1. Publish this programme →</p>
+                <p>2. Navigate to Adjudication →</p>
+                <p>3. Assign judges by email →</p>
+                <p>4. Judges score participants</p>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 4 — Pricing */}
+          {step === 4 && (
             <>
               <Field label="Registration fee (PKR)" id="fee">
                 <input
@@ -198,7 +214,7 @@ function NewEvent() {
                   className="inp"
                   value={fee}
                   onChange={(e) => setFee(Number(e.target.value))}
-                  placeholder="Enter fee"
+                  placeholder="0 for free events"
                 />
               </Field>
 
@@ -214,6 +230,30 @@ function NewEvent() {
                 />
               </Field>
             </>
+          )}
+
+          {/* STEP 5 — Review */}
+          {step === 5 && (
+            <div className="space-y-4">
+              <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Review & publish</p>
+              <div className="divide-y divide-border rounded-md border border-border overflow-hidden">
+                {[
+                  { label: "Name", value: name || "—" },
+                  { label: "Category", value: category },
+                  { label: "Date", value: fmtDate(date) },
+                  { label: "Venue", value: venues.find((v: any) => v.venue_id === venueId)?.venue_name || "Not selected" },
+                  { label: "Capacity", value: String(capacity) },
+                  { label: "Fee", value: fee === 0 ? "Free" : fmtPKR(fee) },
+                ].map(({ label, value }) => (
+                  <div key={label} className="flex items-center px-4 py-3 gap-4">
+                    <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground w-24 shrink-0">{label}</span>
+                    <span className="text-sm font-medium truncate">{value}</span>
+                  </div>
+                ))}
+              </div>
+              {!name.trim() && <p className="text-xs text-rose-500">Programme name is required before publishing.</p>}
+              {!venueId && <p className="text-xs text-rose-500">Venue must be selected before publishing.</p>}
+            </div>
           )}
 
           {/* BUTTONS */}

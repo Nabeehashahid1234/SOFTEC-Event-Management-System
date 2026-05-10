@@ -24,8 +24,7 @@ function errorHandler(err, _req, res, _next) {
   if (code === "ER_BAD_FIELD_ERROR" || code === "ER_NO_SUCH_TABLE") {
     return res.status(500).json({
       success: false,
-      error: "Database schema is not up to date. Run backend database migrations.",
-      details: msg,
+      error: "Something went wrong on our end. Please try again or contact support.",
     });
   }
 
