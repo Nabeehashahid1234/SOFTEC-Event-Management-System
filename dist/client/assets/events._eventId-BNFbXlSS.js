@@ -1,1 +1,0 @@
-import{j as n}from"./index-BOigXCfu.js";const t=()=>n.jsx("div",{className:"min-h-screen grid place-items-center",children:n.jsx("p",{className:"font-display italic text-2xl",children:"Programme not found."})});export{t as notFoundComponent};

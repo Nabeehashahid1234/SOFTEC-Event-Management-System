@@ -142,6 +142,7 @@ function ParticipantDash({ data }: { data: any }) {
     myEvents = [],
     payments = [],
     accommodation = [],
+    passes = [],
     stats = {},
   } = data || {};
 
@@ -175,6 +176,22 @@ function ParticipantDash({ data }: { data: any }) {
           ))
         ) : (
           <p>No events</p>
+        )}
+      </Panel>
+
+      <Panel title="My Passes">
+        {passes.length ? (
+          passes.map((p: any) => (
+            <div key={p.pass_id} className="border-b py-2 flex items-center justify-between">
+              <div>
+                <div className="font-medium">{p.event_name}</div>
+                <div className="text-sm text-muted-foreground">{new Date(p.issued_at).toLocaleString()}</div>
+              </div>
+              <div className="text-sm text-primary">{p.status}</div>
+            </div>
+          ))
+        ) : (
+          <p>No passes</p>
         )}
       </Panel>
     </Page>

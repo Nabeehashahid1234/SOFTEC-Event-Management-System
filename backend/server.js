@@ -40,8 +40,15 @@ app.get("/api/health/db", async (_req, res) => {
 });
 
 app.use("/api/auth", require("./routes/auth.routes"));
+app.use("/api/users", require("./routes/users.routes"));
 app.use("/api/events", require("./routes/events.routes"));
 app.use("/api/venues", require("./routes/venues.routes"));
+app.use("/api/payments", require("./routes/payments.routes"));
+app.use("/api/judging", require("./routes/judging.routes"));
+app.use("/api/sponsorships", require("./routes/sponsorships.routes"));
+app.use("/api/judges", require("./routes/judges.routes"));
+app.use("/api", require("./routes/registrations.routes"));
+app.use("/api/passes", require("./routes/passes.routes"));
 app.use("/api/dashboard", require("./routes/dashboard.routes"));
 app.use("/api/reports", require("./routes/reports.routes"));
 
