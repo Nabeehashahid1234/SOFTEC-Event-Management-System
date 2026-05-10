@@ -36,6 +36,33 @@ router.get("/admin", authRequired, async (_req, res, next) => {
     const [revenueBreakdown] = await pool.query(
       `SELECT payment_type, SUM(amount) AS total FROM payments WHERE status = 'completed' GROUP BY payment_type ORDER BY total DESC`
     );
+    const [pendingSponsorships] = await pool.query(
+      `
+      SELECT sp.sponsorship_id, sp.amount, sp.sponsorship_type, sp.created_at, sp.status,
+             e.event_id, e.event_name, e.event_date,
+             s.sponsor_id, s.company_name, s.sponsorship_level,
+             u.name AS sponsor_user_name, u.email AS sponsor_email
+      FROM sponsorships sp
+      JOIN sponsors s ON s.sponsor_id = sp.sponsor_id
+      JOIN events e ON e.event_id = sp.event_id
+      LEFT JOIN users u ON u.user_id = sp.user_id
+      WHERE sp.status = 'pending'
+      ORDER BY sp.created_at ASC
+      LIMIT 25
+      `
+    );
+    const [sponsorshipHistory] = await pool.query(
+      `
+      SELECT sp.sponsorship_id, sp.amount, sp.sponsorship_type, sp.status, sp.created_at, sp.approved_at, sp.rejection_reason, sp.admin_notes,
+             e.event_id, e.event_name, s.company_name, u.name AS sponsor_user_name
+      FROM sponsorships sp
+      JOIN sponsors s ON s.sponsor_id = sp.sponsor_id
+      JOIN events e ON e.event_id = sp.event_id
+      LEFT JOIN users u ON u.user_id = sp.user_id
+      ORDER BY sp.created_at DESC
+      LIMIT 50
+      `
+    );
     const [recentActivity] = await pool.query(
       `
       SELECT p.participant_id, u.user_id, u.name, e.event_id, e.event_name, p.registration_date, COALESCE(py.status, 'pending') AS payment_status
@@ -49,7 +76,7 @@ router.get("/admin", authRequired, async (_req, res, next) => {
     );
     const [paymentStatus] = await pool.query("SELECT status, COUNT(*) AS count FROM payments GROUP BY status ORDER BY count DESC");
 
-    return res.json({ success: true, data: { kpi: { total_users, active_users, total_events, total_registrations, revenue_completed, pending_revenue }, roleDistribution, categoryDistribution, venueUtilization, topPrograms, revenueBreakdown, recentActivity, paymentStatus } });
+    return res.json({ success: true, data: { kpi: { total_users, active_users, total_events, total_registrations, revenue_completed, pending_revenue }, roleDistribution, categoryDistribution, venueUtilization, topPrograms, revenueBreakdown, pendingSponsorships, sponsorshipHistory, recentActivity, paymentStatus } });
   } catch (err) {
     return next(err);
   }
@@ -196,7 +223,7 @@ router.get("/sponsor", authRequired, async (req, res, next) => {
 
     const sponsorId = sponsorInfo.sponsor_id;
     const [sponsoredEvents] = await pool.query(
-      `SELECT e.event_id, e.event_name, e.category, e.event_date, COUNT(DISTINCT p.participant_id) AS participants_reached, COALESCE(SUM(sp.amount), 0) AS sponsorship_contribution FROM sponsorships sp JOIN events e ON sp.event_id = e.event_id LEFT JOIN participants p ON p.event_id = e.event_id WHERE sp.sponsor_id = ? GROUP BY e.event_id, e.event_name, e.category, e.event_date ORDER BY e.event_date DESC`,
+      `SELECT e.event_id, e.event_name, e.category, e.event_date, COUNT(DISTINCT p.participant_id) AS participants_reached, COALESCE(SUM(CASE WHEN sp.status = 'approved' THEN sp.amount ELSE 0 END), 0) AS sponsorship_contribution FROM sponsorships sp JOIN events e ON sp.event_id = e.event_id LEFT JOIN participants p ON p.event_id = e.event_id WHERE sp.sponsor_id = ? GROUP BY e.event_id, e.event_name, e.category, e.event_date ORDER BY e.event_date DESC`,
       [sponsorId]
     );
     const [payments] = await pool.query(
@@ -204,12 +231,12 @@ router.get("/sponsor", authRequired, async (req, res, next) => {
       [userId]
     );
     const [history] = await pool.query(
-      `SELECT sp.sponsorship_id, e.event_name, sp.amount, sp.status, sp.created_at FROM sponsorships sp LEFT JOIN events e ON sp.event_id = e.event_id WHERE sp.sponsor_id = ? ORDER BY sp.created_at DESC`,
+      `SELECT sp.sponsorship_id, e.event_name, sp.amount, sp.status, sp.created_at, sp.approved_at, sp.rejection_reason, sp.admin_notes FROM sponsorships sp LEFT JOIN events e ON sp.event_id = e.event_id WHERE sp.sponsor_id = ? ORDER BY sp.created_at DESC`,
       [sponsorId]
     );
-    const [[{ total_contribution }]] = await pool.query("SELECT COALESCE(SUM(amount), 0) AS total_contribution FROM sponsorships WHERE sponsor_id = ? AND status = 'confirmed'", [sponsorId]);
-    const [[{ events_sponsored }]] = await pool.query("SELECT COUNT(DISTINCT event_id) AS events_sponsored FROM sponsorships WHERE sponsor_id = ?", [sponsorId]);
-    const [[{ total_reach }]] = await pool.query("SELECT COALESCE(COUNT(DISTINCT p.participant_id), 0) AS total_reach FROM sponsorships sp LEFT JOIN participants p ON p.event_id = sp.event_id WHERE sp.sponsor_id = ?", [sponsorId]);
+    const [[{ total_contribution }]] = await pool.query("SELECT COALESCE(SUM(amount), 0) AS total_contribution FROM sponsorships WHERE sponsor_id = ? AND status = 'approved'", [sponsorId]);
+    const [[{ events_sponsored }]] = await pool.query("SELECT COUNT(DISTINCT event_id) AS events_sponsored FROM sponsorships WHERE sponsor_id = ? AND status = 'approved'", [sponsorId]);
+    const [[{ total_reach }]] = await pool.query("SELECT COALESCE(COUNT(DISTINCT p.participant_id), 0) AS total_reach FROM sponsorships sp LEFT JOIN participants p ON p.event_id = sp.event_id WHERE sp.sponsor_id = ? AND sp.status = 'approved'", [sponsorId]);
 
     return res.json({ success: true, data: { sponsorInfo, sponsoredEvents, payments, history, stats: { total_contribution, events_sponsored, total_reach } } });
   } catch (err) {

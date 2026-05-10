@@ -111,12 +111,13 @@ function Sponsorship() {
           <div key={sp.sponsorship_id} className="rounded-lg border border-border bg-card p-6 space-y-3">
             <div className="flex items-start justify-between">
               <Pill tone="muted">{sp.sponsorship_type}</Pill>
-              <span className={`font-mono text-[10px] uppercase tracking-wider ${sp.status === "confirmed" ? "text-green-500" : sp.status === "cancelled" ? "text-rose-400" : "text-amber-500"}`}>
+              <span className={`font-mono text-[10px] uppercase tracking-wider ${sp.status === "approved" ? "text-green-500" : sp.status === "rejected" ? "text-rose-400" : sp.status === "pending" ? "text-amber-500" : "text-muted-foreground"}`}>
                 {sp.status}
               </span>
             </div>
             <h3 className="font-display text-xl font-semibold">{sp.event_name || "General sponsorship"}</h3>
             {sp.event_date && <p className="font-mono text-[11px] text-muted-foreground">{fmtDate(sp.event_date)}</p>}
+            {sp.rejection_reason && <p className="text-xs text-rose-500">{sp.rejection_reason}</p>}
             <p className="font-display text-2xl font-semibold text-primary">{fmtPKR(sp.amount)}</p>
           </div>
         ))}

@@ -222,7 +222,7 @@ async function calculatePrizePool(eventId) {
     FROM events e
     LEFT JOIN sponsorships s
       ON s.event_id = e.event_id
-      AND s.status = 'confirmed'
+      AND s.status = 'approved'
     WHERE e.event_id = ?
     GROUP BY e.event_id, e.prize_pool
     `,

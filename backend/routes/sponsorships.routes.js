@@ -119,34 +119,108 @@ router.post(
   }
 );
 
-router.patch("/:id/confirm", authRequired, requireRole(["admin"]), [param("id").isInt()], async (req, res, next) => {
+router.patch("/:id/approve", authRequired, requireRole(["admin"]), [param("id").isInt(), body("admin_notes").optional().isString().trim().isLength({ max: 1000 })], async (req, res, next) => {
+  let conn;
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ success: false, error: "Invalid id" });
 
     const sponsorshipId = Number(req.params.id);
-    const [result] = await pool.query("UPDATE sponsorships SET status = 'confirmed' WHERE sponsorship_id = ?", [sponsorshipId]);
-    if (!result.affectedRows) {
+    const adminId = req.user.user_id;
+    const adminNotes = req.body.admin_notes || null;
+
+    conn = await pool.getConnection();
+    await conn.beginTransaction();
+
+    const [[sp]] = await conn.query(
+      "SELECT sponsorship_id, user_id, event_id, amount, status FROM sponsorships WHERE sponsorship_id = ? FOR UPDATE",
+      [sponsorshipId]
+    );
+    if (!sp) {
+      await conn.rollback();
       return res.status(404).json({ success: false, error: "Sponsorship not found" });
     }
-
-    const [[sp]] = await pool.query("SELECT user_id, event_id, amount FROM sponsorships WHERE sponsorship_id = ?", [sponsorshipId]);
-    if (sp) {
-      await pool.query(
-        "UPDATE payments SET status = 'completed' WHERE user_id = ? AND event_id = ? AND payment_type = 'sponsorship' AND status = 'pending'",
-        [sp.user_id, sp.event_id]
-      );
-      // Update event prize pool
-      if (sp.event_id) {
-        await pool.query("UPDATE events SET prize_pool = COALESCE(prize_pool, 0) + ? WHERE event_id = ?", [sp.amount || 0, sp.event_id]);
-      }
+    if (sp.status === "approved") {
+      await conn.rollback();
+      return res.status(400).json({ success: false, error: "Sponsorship already approved" });
     }
 
-    return res.json({ success: true, data: { sponsorship_id: sponsorshipId, status: "confirmed" } });
+    await conn.query(
+      "UPDATE sponsorships SET status = 'approved', approved_by = ?, approved_at = CURRENT_TIMESTAMP, admin_notes = ? WHERE sponsorship_id = ?",
+      [adminId, adminNotes, sponsorshipId]
+    );
+
+    await conn.query(
+      "UPDATE payments SET status = 'completed' WHERE user_id = ? AND event_id = ? AND payment_type = 'sponsorship' AND status = 'pending'",
+      [sp.user_id, sp.event_id]
+    );
+
+    if (sp.event_id) {
+      await conn.query(
+        "UPDATE events SET sponsorship_total = sponsorship_total + ? WHERE event_id = ?",
+        [sp.amount || 0, sp.event_id]
+      );
+    }
+
+    await conn.commit();
+    return res.json({ success: true, data: { sponsorship_id: sponsorshipId, status: "approved" } });
   } catch (err) {
+    if (conn) await conn.rollback();
     return next(err);
+  } finally {
+    if (conn) conn.release();
   }
 });
+
+router.patch("/:id/reject", authRequired, requireRole(["admin"]),
+  [param("id").isInt(), body("rejection_reason").optional().isString().trim().isLength({ max: 500 }), body("admin_notes").optional().isString().trim().isLength({ max: 1000 })],
+  async (req, res, next) => {
+    let conn;
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) return res.status(400).json({ success: false, error: "Invalid id" });
+
+      const sponsorshipId = Number(req.params.id);
+      const adminId = req.user.user_id;
+      const rejection_reason = req.body.rejection_reason || null;
+      const adminNotes = req.body.admin_notes || null;
+
+      conn = await pool.getConnection();
+      await conn.beginTransaction();
+
+      const [[sp]] = await conn.query(
+        "SELECT sponsorship_id, user_id, event_id, status FROM sponsorships WHERE sponsorship_id = ? FOR UPDATE",
+        [sponsorshipId]
+      );
+      if (!sp) {
+        await conn.rollback();
+        return res.status(404).json({ success: false, error: "Sponsorship not found" });
+      }
+      if (sp.status !== "pending") {
+        await conn.rollback();
+        return res.status(400).json({ success: false, error: `Sponsorship is already ${sp.status}` });
+      }
+
+      await conn.query(
+        "UPDATE sponsorships SET status = 'rejected', approved_by = ?, approved_at = CURRENT_TIMESTAMP, rejection_reason = ?, admin_notes = ? WHERE sponsorship_id = ?",
+        [adminId, rejection_reason, adminNotes, sponsorshipId]
+      );
+
+      await conn.query(
+        "UPDATE payments SET status = 'failed' WHERE user_id = ? AND event_id = ? AND payment_type = 'sponsorship' AND status = 'pending'",
+        [sp.user_id, sp.event_id]
+      );
+
+      await conn.commit();
+      return res.json({ success: true, data: { sponsorship_id: sponsorshipId, status: "rejected" } });
+    } catch (err) {
+      if (conn) await conn.rollback();
+      return next(err);
+    } finally {
+      if (conn) conn.release();
+    }
+  }
+);
 
 router.post(
   "/profile",

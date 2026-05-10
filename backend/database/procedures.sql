@@ -2,35 +2,45 @@ USE softec_db;
 
 DELIMITER //
 
+-- ─── Leaderboard: ranks participants by average judge score for an event ───────
 DROP PROCEDURE IF EXISTS sp_get_leaderboard//
 CREATE PROCEDURE sp_get_leaderboard(IN p_event_id INT)
 BEGIN
   SELECT
-    s.event_id,
-    p.participant_id,
-    u.name AS participant_name,
-    ROUND(AVG(s.score), 2) AS average_score,
-    COUNT(s.score_id) AS scores_count
-  FROM scores s
-  JOIN participants p ON p.participant_id = s.participant_id
-  JOIN users u ON u.user_id = p.user_id
-  WHERE s.event_id = p.event_id
-    AND s.event_id = p.event_id
-    AND s.event_id = p_event_id
-  GROUP BY s.event_id, p.participant_id, u.name
-  ORDER BY average_score DESC, scores_count DESC;
+    ranked.rank,
+    ranked.participant_id,
+    ranked.participant_name AS name,
+    ranked.average_score   AS score
+  FROM (
+    SELECT
+      p.participant_id,
+      u.name                                                                   AS participant_name,
+      ROUND(AVG(j.score), 2)                                                   AS average_score,
+      ROW_NUMBER() OVER (ORDER BY AVG(j.score) DESC, COUNT(j.judging_id) DESC,
+                         p.participant_id ASC)                                  AS rank
+    FROM judging j
+    JOIN participants p ON p.participant_id = j.participant_id
+    JOIN users       u ON u.user_id         = p.user_id
+    WHERE j.event_id = p_event_id
+    GROUP BY p.participant_id, u.name
+  ) AS ranked
+  ORDER BY ranked.rank;
 END//
 
+-- ─── Assign the least-busy judge to every unassigned event ────────────────────
 DROP PROCEDURE IF EXISTS sp_assign_unassigned_events//
 CREATE PROCEDURE sp_assign_unassigned_events()
 BEGIN
-  DECLARE done INT DEFAULT FALSE;
+  DECLARE done          INT DEFAULT FALSE;
   DECLARE current_event INT;
   DECLARE event_cursor CURSOR FOR
-    SELECT event_id FROM events
-    WHERE assigned_judge_id IS NULL
-      AND event_status IN ('draft','open')
-    ORDER BY event_date ASC;
+    SELECT e.event_id
+    FROM   events e
+    WHERE  NOT EXISTS (
+             SELECT 1 FROM event_judges ej WHERE ej.event_id = e.event_id
+           )
+      AND  e.event_status IN ('draft', 'open')
+    ORDER BY e.event_date ASC;
 
   DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
 
@@ -38,55 +48,53 @@ BEGIN
   OPEN event_cursor;
   read_loop: LOOP
     FETCH event_cursor INTO current_event;
-    IF done THEN
-      LEAVE read_loop;
-    END IF;
+    IF done THEN LEAVE read_loop; END IF;
     CALL sp_auto_assign_judge(current_event);
   END LOOP;
   CLOSE event_cursor;
   COMMIT;
 END//
 
+-- ─── Assign the least-busy judge to a single event ───────────────────────────
 DROP PROCEDURE IF EXISTS sp_auto_assign_judge//
 CREATE PROCEDURE sp_auto_assign_judge(IN p_event_id INT)
 BEGIN
-  DECLARE candidate_judge INT;
-  DECLARE candidate_exists INT;
+  DECLARE candidate_judge_id INT DEFAULT NULL;
 
-  SELECT u.user_id INTO candidate_judge
-  FROM users u
-  LEFT JOIN judge_assignments ja
-    ON ja.judge_id = u.user_id
-    AND ja.active = 1
-  WHERE u.role = 'judge'
-    AND u.status = 'active'
-  GROUP BY u.user_id
-  ORDER BY COUNT(ja.assignment_id) ASC, u.created_at ASC
-  LIMIT 1;
+  -- Pick the judge with the fewest current assignments (ties broken by judge_id)
+  SELECT j.judge_id
+  INTO   candidate_judge_id
+  FROM   judges j
+  LEFT JOIN event_judges ej ON ej.judge_id = j.judge_id
+  GROUP  BY j.judge_id, j.assigned_events_count
+  ORDER  BY j.assigned_events_count ASC, COUNT(ej.event_judge_id) ASC, j.judge_id ASC
+  LIMIT  1;
 
-  SET candidate_exists = candidate_judge IS NOT NULL;
+  IF candidate_judge_id IS NOT NULL THEN
+    INSERT IGNORE INTO event_judges (event_id, judge_id)
+      VALUES (p_event_id, candidate_judge_id);
 
-  IF candidate_exists THEN
-    UPDATE events SET assigned_judge_id = candidate_judge WHERE event_id = p_event_id;
-    INSERT INTO judge_assignments (event_id, judge_id)
-      VALUES (p_event_id, candidate_judge)
-      ON DUPLICATE KEY UPDATE active = VALUES(active), assigned_at = VALUES(assigned_at);
+    IF ROW_COUNT() > 0 THEN
+      UPDATE judges
+      SET    assigned_events_count = assigned_events_count + 1
+      WHERE  judge_id = candidate_judge_id;
+    END IF;
   END IF;
 END//
 
+-- ─── Recalculate sponsorship_total for one event from approved sponsorships ──
 DROP PROCEDURE IF EXISTS sp_refresh_sponsorship_total//
 CREATE PROCEDURE sp_refresh_sponsorship_total(IN p_event_id INT)
 BEGIN
   UPDATE events e
   JOIN (
-    SELECT COALESCE(SUM(s.amount), 0) AS sponsorship_total
-    FROM sponsorships s
-    WHERE s.event_id = p_event_id
-      AND s.status = 'confirmed'
-  ) totals
-    ON 1=1
-  SET e.sponsorship_total = totals.sponsorship_total,
-      e.updated_at = CURRENT_TIMESTAMP
+    SELECT COALESCE(SUM(s.amount), 0) AS total
+    FROM   sponsorships s
+    WHERE  s.event_id = p_event_id
+      AND  s.status   = 'approved'
+  ) totals ON 1 = 1
+  SET e.sponsorship_total = totals.total,
+      e.updated_at        = CURRENT_TIMESTAMP
   WHERE e.event_id = p_event_id;
 END//
 

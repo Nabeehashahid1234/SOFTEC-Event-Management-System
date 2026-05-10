@@ -85,7 +85,7 @@ SELECT
   COUNT(DISTINCT sp.event_id) AS sponsored_events
 FROM sponsors s
 JOIN sponsorships sp ON sp.sponsor_id = s.sponsor_id
-WHERE sp.status = 'confirmed'
+WHERE sp.status = 'approved'
 GROUP BY s.sponsor_id, s.company_name, s.sponsorship_level
 ORDER BY total_funds DESC;
 

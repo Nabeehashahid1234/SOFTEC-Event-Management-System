@@ -34,10 +34,10 @@ function LeaderboardPanel({ event }: { event: any }) {
       ) : (
         <ol className="mt-4 divide-y divide-border">
           {rows.map((row) => (
-            <li key={`${event.id}-${row.rank}-${row.participant_id}`} className="flex items-center gap-3 py-2.5">
-              <span className="font-display text-lg font-semibold tabular w-7 text-primary">{String(row.rank).padStart(2, "0")}</span>
-              <span className="text-sm flex-1">{row.name}</span>
-              <span className="font-mono text-sm tabular text-foreground">{Number(row.score ?? 0).toFixed(2)}</span>
+            <li key={`${event.id}-${row.rank}-${row.participant_id}`} className="grid grid-cols-[56px_minmax(0,1fr)_72px] gap-3 py-2.5 items-center">
+              <span className="font-display text-lg font-semibold tabular text-primary">{String(row.rank).padStart(2, "0")}</span>
+              <span className="text-sm min-w-0 truncate">{row.name}</span>
+              <span className="font-mono text-sm tabular text-foreground text-right">{Number(row.score ?? 0).toFixed(2)}</span>
             </li>
           ))}
         </ol>
