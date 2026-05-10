@@ -28,6 +28,17 @@ async function main() {
     multipleStatements: true,
   });
 
+  const [tableCountRows] = await connection.query(
+    `SELECT COUNT(*) AS count FROM information_schema.TABLES WHERE TABLE_SCHEMA = ?`,
+    [process.env.DB_NAME]
+  );
+
+  if (!tableCountRows[0].count) {
+    throw new Error(
+      "Database appears empty. Run node scripts/setupDatabase.js to create the base schema before applying migrations."
+    );
+  }
+
   try {
     for (const file of files) {
       const sql = fs.readFileSync(path.join(migrationDir, file), "utf8");
