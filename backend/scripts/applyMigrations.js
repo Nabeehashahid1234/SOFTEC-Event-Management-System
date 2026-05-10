@@ -32,6 +32,7 @@ async function main() {
     `SELECT COUNT(*) AS count FROM information_schema.TABLES WHERE TABLE_SCHEMA = ?`,
     [process.env.DB_NAME]
   );
+  // If there are no tables, it likely means the base schema hasn't been set up. We should warn the user to run the setup script first.
 
   if (!tableCountRows[0].count) {
     throw new Error(
