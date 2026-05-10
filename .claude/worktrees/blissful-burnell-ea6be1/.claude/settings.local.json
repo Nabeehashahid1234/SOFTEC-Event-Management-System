@@ -8,7 +8,8 @@
       "Bash(Remove-Item \"D:\\\\github\\\\SOFTEC-Event-Management-System\\\\backend\\\\database\\\\migrations\\\\20260510_add_passes.sql\")",
       "Bash(Remove-Item \"D:\\\\github\\\\SOFTEC-Event-Management-System\\\\backend\\\\database\\\\migrations\\\\20260510_update_judges_events.sql\")",
       "Bash(Remove-Item \"D:\\\\github\\\\SOFTEC-Event-Management-System\\\\backend\\\\database\\\\migrations\\\\20260510_runtime_schema_stabilization.sql\")",
-      "Bash(Get-ChildItem \"D:\\\\github\\\\SOFTEC-Event-Management-System\\\\backend\\\\database\\\\migrations\\\\\")"
+      "Bash(Get-ChildItem \"D:\\\\github\\\\SOFTEC-Event-Management-System\\\\backend\\\\database\\\\migrations\\\\\")",
+      "Bash(grep -n \"avg_score\" \"D:\\\\github\\\\SOFTEC-Event-Management-System\\\\src\\\\routes\\\\events.\\\\$eventId.tsx\")"
     ]
   }
 }
