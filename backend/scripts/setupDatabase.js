@@ -10,7 +10,7 @@ const fs = require("fs");
 const dotenv = require("dotenv");
 const mysql = require("mysql2/promise");
 const readline = require("readline");
-
+// Load environment variables from .env file
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 const RED = "\x1b[31m";
