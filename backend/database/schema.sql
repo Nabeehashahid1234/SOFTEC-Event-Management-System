@@ -54,6 +54,7 @@ CREATE TABLE events (
   venue_id INT NULL,
   organizer_id INT NULL,
   registration_fee DECIMAL(10,2) NOT NULL DEFAULT 0.00 CHECK (registration_fee >= 0),
+  prize_pool DECIMAL(12,2) NOT NULL DEFAULT 0.00 CHECK (prize_pool >= 0),
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT uq_events_venue_date UNIQUE (venue_id, event_date),
   CONSTRAINT fk_events_venue FOREIGN KEY (venue_id) REFERENCES venues(venue_id) ON DELETE SET NULL ON UPDATE CASCADE,
@@ -78,7 +79,8 @@ CREATE TABLE judges (
   judge_id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(120) NOT NULL,
   email VARCHAR(160) NOT NULL UNIQUE,
-  contact VARCHAR(80)
+  contact VARCHAR(80),
+  assigned_events_count INT NOT NULL DEFAULT 0
 ) ENGINE=InnoDB;
 
 CREATE TABLE judging (
@@ -211,6 +213,19 @@ CREATE TABLE role_permissions (
   permissions JSON NOT NULL,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   audit_metadata JSON NULL
+) ENGINE=InnoDB;
+
+
+CREATE TABLE passes (
+  pass_id VARCHAR(36) PRIMARY KEY,
+  participant_id INT NOT NULL,
+  event_id INT NOT NULL,
+  issued_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  status ENUM('issued','redeemed','cancelled') NOT NULL DEFAULT 'issued',
+  qr_code VARCHAR(255) NULL,
+  CONSTRAINT fk_passes_participant FOREIGN KEY (participant_id) REFERENCES participants(participant_id) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT fk_passes_event FOREIGN KEY (event_id) REFERENCES events(event_id) ON DELETE CASCADE ON UPDATE CASCADE,
+  INDEX idx_passes_event_id (event_id)
 ) ENGINE=InnoDB;
 
 

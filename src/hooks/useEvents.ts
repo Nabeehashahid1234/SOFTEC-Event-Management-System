@@ -47,7 +47,7 @@ function mapEvent(row: any): UiEvent {
     venueId: row.venue_id == null ? null : Number(row.venue_id),
     venueName: String(row.venue_name || "TBD"),
     rules: [],
-    prizePool: 0,
+    prizePool: Number(row.total_prize_pool ?? row.prize_pool ?? 0),
   };
 }
 

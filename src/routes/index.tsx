@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, ArrowUpRight, Sparkles, Zap, Trophy, Users, Calendar, MapPin, Star, Code2, Briefcase, Gamepad2, Camera } from "lucide-react";
-import { EVENTS, TESTIMONIALS, USERS } from "@/lib/mock";
+import { useEvents } from "@/hooks/useEvents";
 import { countdown, fmtDate, fmtPKR } from "@/lib/format";
 import { Hairline, Pill } from "@/components/ui-bits";
 import { ThemeSwitch } from "@/components/ThemeSwitch";
@@ -22,22 +22,49 @@ const SOFTEC_DATE = (() => {
   return d.toISOString();
 })();
 
-const CATEGORIES = [
-  { num: "01", name: "Tech", desc: "Engineering · ML · systems · code", count: EVENTS.filter(e => e.category === "Tech").length, icon: Code2, tone: "ember" },
-  { num: "02", name: "Business", desc: "Pitches · marketing · strategy", count: EVENTS.filter(e => e.category === "Business").length, icon: Briefcase, tone: "gold" },
-  { num: "03", name: "Gaming", desc: "Esports · arcade · tournaments", count: EVENTS.filter(e => e.category === "Gaming").length, icon: Gamepad2, tone: "electric" },
-  { num: "04", name: "General", desc: "Photography · debates · arts", count: EVENTS.filter(e => e.category === "General").length, icon: Camera, tone: "sage" },
+const TESTIMONIALS = [
+  {
+    quote: "The kind of event where a prototype can become a product by the end of the week.",
+    author: "SOFTEC alumnus",
+    role: "Participant",
+  },
+  {
+    quote: "Fast-paced, ambitious, and surprisingly well run for a student-built festival.",
+    author: "Industry mentor",
+    role: "Judge",
+  },
+  {
+    quote: "A strong bridge between campus energy and real-world technical pressure.",
+    author: "Former organizer",
+    role: "Volunteer",
+  },
+];
+
+const LANDING_SPONSORS = [
+  { tier: "Title", company: "Systems Ltd" },
+  { tier: "Gold", company: "Allied Bank" },
+  { tier: "Gold", company: "XLoop" },
+  { tier: "Silver", company: "TechNova" },
+  { tier: "Silver", company: "DevStack" },
 ];
 
 function Landing() {
   const [ct, setCt] = useState(countdown(SOFTEC_DATE));
+  const { data: events = [] } = useEvents();
+
   useEffect(() => {
     const id = setInterval(() => setCt(countdown(SOFTEC_DATE)), 60000);
     return () => clearInterval(id);
   }, []);
 
-  const featured = EVENTS.filter(e => e.featured);
-  const sponsors = USERS.filter(u => u.role === "sponsor");
+  const categories = [
+    { num: "01", name: "Tech", desc: "Engineering · ML · systems · code", count: events.filter((e: any) => e.category === "Tech").length, icon: Code2, tone: "ember" },
+    { num: "02", name: "Business", desc: "Pitches · marketing · strategy", count: events.filter((e: any) => e.category === "Business").length, icon: Briefcase, tone: "gold" },
+    { num: "03", name: "Gaming", desc: "Esports · arcade · tournaments", count: events.filter((e: any) => e.category === "Gaming").length, icon: Gamepad2, tone: "electric" },
+    { num: "04", name: "General", desc: "Photography · debates · arts", count: events.filter((e: any) => e.category === "General").length, icon: Camera, tone: "sage" },
+  ];
+
+  const featured = events.filter((e: any) => e.featured);
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-clip">
@@ -181,7 +208,7 @@ function Landing() {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {CATEGORIES.map((c, i) => (
+          {categories.map((c, i) => (
             <Link
               key={c.num}
               to="/events"
@@ -279,7 +306,7 @@ function Landing() {
 
           <div className="mt-14">
             <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">Title Patron</p>
-            <p className="font-display text-6xl md:text-7xl font-semibold mt-5 text-gradient-ember">{sponsors.find(s => s.tier === "Title")?.company}</p>
+            <p className="font-display text-6xl md:text-7xl font-semibold mt-5 text-gradient-ember">{LANDING_SPONSORS.find(s => s.tier === "Title")?.company}</p>
           </div>
 
           <div className="mt-14 hairline-ember mx-auto w-16" />
@@ -287,7 +314,7 @@ function Landing() {
           <div className="mt-12">
             <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">Gold Patrons</p>
             <div className="mt-6 flex flex-wrap justify-center gap-x-12 gap-y-4">
-              {sponsors.filter(s => s.tier === "Gold").map(s => (
+              {LANDING_SPONSORS.filter(s => s.tier === "Gold").map(s => (
                 <span key={s.id} className="font-display text-3xl md:text-4xl font-medium hover:text-primary transition-colors cursor-default">{s.company}</span>
               ))}
             </div>
@@ -296,7 +323,7 @@ function Landing() {
           <div className="mt-12">
             <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">Silver Patrons</p>
             <div className="mt-5 flex flex-wrap justify-center gap-x-8 gap-y-3">
-              {sponsors.filter(s => s.tier === "Silver").map(s => (
+              {LANDING_SPONSORS.filter(s => s.tier === "Silver").map(s => (
                 <span key={s.id} className="font-display text-xl text-muted-foreground hover:text-foreground transition-colors cursor-default">{s.company}</span>
               ))}
             </div>

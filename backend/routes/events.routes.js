@@ -45,6 +45,7 @@ router.get(
           e.max_participants,
           e.registered_participants,
           e.registration_fee,
+          COALESCE(e.prize_pool, 0) AS prize_pool,
           v.venue_id,
           v.venue_name
         FROM events e
@@ -143,6 +144,27 @@ router.post(
           b.registration_fee,
         ]
       );
+
+      // Attempt automatic judge assignment: pick least-busy judge
+      try {
+        const [[leastBusy]] = await pool.query(
+          `
+          SELECT j.judge_id, COUNT(ej.event_judge_id) AS assigned_count
+          FROM judges j
+          LEFT JOIN event_judges ej ON ej.judge_id = j.judge_id
+          GROUP BY j.judge_id
+          ORDER BY assigned_count ASC, j.judge_id ASC
+          LIMIT 1
+          `
+        );
+
+        if (leastBusy && leastBusy.judge_id) {
+          await pool.query("INSERT IGNORE INTO event_judges (event_id, judge_id) VALUES (?, ?)", [result.insertId, leastBusy.judge_id]);
+          await pool.query("UPDATE judges SET assigned_events_count = assigned_events_count + 1 WHERE judge_id = ?", [leastBusy.judge_id]);
+        }
+      } catch (assignErr) {
+        console.error("Automatic judge assignment failed:", assignErr);
+      }
 
       return res.status(201).json({ success: true, data: { event_id: result.insertId } });
     } catch (err) {
