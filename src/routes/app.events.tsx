@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { Plus, Compass } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useEvents } from "@/hooks/useEvents";
@@ -8,10 +8,14 @@ import { fmtDate, fmtPKR } from "@/lib/format";
 export const Route = createFileRoute("/app/events")({ component: AppEvents });
 
 function AppEvents() {
+  const path = useRouterState({ select: s => s.location.pathname });
   const { user } = useAuth();
   const { data: list = [], isLoading, isError } = useEvents();
   const isOrganizer = user?.role === "organizer" || user?.role === "admin";
   const isParticipant = user?.role === "participant";
+
+  // Child route active (e.g. /app/events/new) — delegate rendering to it
+  if (path !== "/app/events") return <Outlet />;
 
   return (
     <div className="max-w-[1280px] mx-auto px-6 lg:px-10 py-8">
