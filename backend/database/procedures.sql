@@ -2,148 +2,88 @@ USE softec_db;
 
 DELIMITER //
 
-CREATE PROCEDURE sp_register_team(
-  IN p_team_name VARCHAR(120),
-  IN p_event_id INT,
-  IN p_member_user_ids JSON
-)
-BEGIN
-  DECLARE v_team_id INT;
-  DECLARE v_member_count INT DEFAULT 0;
-  DECLARE v_conflicts INT DEFAULT 0;
-
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION
-  BEGIN
-    ROLLBACK;
-    RESIGNAL;
-  END;
-
-  START TRANSACTION;
-
-  SELECT COUNT(*) INTO v_member_count
-  FROM JSON_TABLE(p_member_user_ids, '$[*]' COLUMNS (user_id INT PATH '$')) AS members;
-
-  IF v_member_count = 0 THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Team must contain at least one member';
-  END IF;
-
-  SELECT COUNT(*) INTO v_conflicts
-  FROM JSON_TABLE(p_member_user_ids, '$[*]' COLUMNS (user_id INT PATH '$')) AS requested
-  JOIN team_members tm ON tm.user_id = requested.user_id
-  JOIN teams t ON t.team_id = tm.team_id
-  WHERE t.event_id = p_event_id;
-
-  IF v_conflicts > 0 THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'One or more members already belong to a team for this event';
-  END IF;
-
-  INSERT INTO teams (team_name, event_id)
-  VALUES (p_team_name, p_event_id);
-
-  SET v_team_id = LAST_INSERT_ID();
-
-  INSERT INTO team_members (team_id, user_id, role)
-  SELECT v_team_id, user_id,
-         CASE WHEN ordinality = 1 THEN 'captain' ELSE 'member' END
-  FROM JSON_TABLE(
-    p_member_user_ids,
-    '$[*]' COLUMNS (
-      ordinality FOR ORDINALITY,
-      user_id INT PATH '$'
-    )
-  ) AS members;
-
-  COMMIT;
-
-  SELECT v_team_id AS team_id;
-END//
-
-CREATE PROCEDURE sp_schedule_event_rounds(
-  IN p_event_id INT,
-  IN p_prelim_date DATETIME,
-  IN p_semi_date DATETIME,
-  IN p_final_date DATETIME,
-  IN p_venue_id INT
-)
-BEGIN
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION
-  BEGIN
-    ROLLBACK;
-    RESIGNAL;
-  END;
-
-  START TRANSACTION;
-
-  INSERT INTO event_rounds (event_id, round_type, round_date, venue_id)
-  VALUES
-    (p_event_id, 'Prelims', p_prelim_date, p_venue_id),
-    (p_event_id, 'Semi-Finals', p_semi_date, p_venue_id),
-    (p_event_id, 'Finals', p_final_date, p_venue_id);
-
-  COMMIT;
-END//
-
 CREATE PROCEDURE sp_get_leaderboard(IN p_event_id INT)
 BEGIN
   SELECT
+    s.event_id,
     p.participant_id,
-    u.user_id,
-    u.name,
-    ROUND(AVG(j.score), 2) AS avg_score,
-    COUNT(j.judging_id) AS scores_count
-  FROM participants p
+    u.name AS participant_name,
+    ROUND(AVG(s.score), 2) AS average_score,
+    COUNT(s.score_id) AS scores_count
+  FROM scores s
+  JOIN participants p ON p.participant_id = s.participant_id
   JOIN users u ON u.user_id = p.user_id
-  JOIN judging j ON j.participant_id = p.participant_id
-  WHERE p.event_id = p_event_id
-  GROUP BY p.participant_id, u.user_id, u.name
-  ORDER BY avg_score DESC, scores_count DESC
-  LIMIT 10;
+  WHERE s.event_id = p.event_id
+    AND s.event_id = p.event_id
+    AND s.event_id = p_event_id
+  GROUP BY s.event_id, p.participant_id, u.name
+  ORDER BY average_score DESC, scores_count DESC;
 END//
 
-CREATE PROCEDURE sp_generate_event_reminders()
+CREATE PROCEDURE sp_assign_unassigned_events()
 BEGIN
-  INSERT IGNORE INTO reminders (user_id, event_id, reminder_date, message)
-  SELECT
-    p.user_id,
-    e.event_id,
-    CURRENT_DATE(),
-    CONCAT('Reminder: ', e.event_name, ' is scheduled on ', DATE_FORMAT(e.event_date, '%Y-%m-%d'))
-  FROM participants p
-  JOIN events e ON e.event_id = p.event_id
-  WHERE e.event_date = DATE_ADD(CURRENT_DATE(), INTERVAL 3 DAY);
-END//
+  DECLARE done INT DEFAULT FALSE;
+  DECLARE current_event INT;
+  DECLARE event_cursor CURSOR FOR
+    SELECT event_id FROM events
+    WHERE assigned_judge_id IS NULL
+      AND event_status IN ('draft','open')
+    ORDER BY event_date ASC;
 
-CREATE PROCEDURE sp_process_refund(IN p_payment_id INT)
-BEGIN
-  DECLARE v_user_id INT;
-  DECLARE v_event_id INT;
-  DECLARE v_payment_type ENUM('registration','accommodation','sponsorship');
-
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION
-  BEGIN
-    ROLLBACK;
-    RESIGNAL;
-  END;
+  DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
 
   START TRANSACTION;
-
-  SELECT user_id, event_id, payment_type
-  INTO v_user_id, v_event_id, v_payment_type
-  FROM payments
-  WHERE payment_id = p_payment_id
-  FOR UPDATE;
-
-  UPDATE payments
-  SET status = 'failed'
-  WHERE payment_id = p_payment_id;
-
-  IF v_payment_type = 'registration' AND v_event_id IS NOT NULL THEN
-    DELETE FROM participants
-    WHERE user_id = v_user_id
-      AND event_id = v_event_id;
-  END IF;
-
+  OPEN event_cursor;
+  read_loop: LOOP
+    FETCH event_cursor INTO current_event;
+    IF done THEN
+      LEAVE read_loop;
+    END IF;
+    CALL sp_auto_assign_judge(current_event);
+  END LOOP;
+  CLOSE event_cursor;
   COMMIT;
+END//
+
+CREATE PROCEDURE sp_auto_assign_judge(IN p_event_id INT)
+BEGIN
+  DECLARE candidate_judge INT;
+  DECLARE candidate_exists INT;
+
+  SELECT u.user_id INTO candidate_judge
+  FROM users u
+  LEFT JOIN judge_assignments ja
+    ON ja.judge_id = u.user_id
+    AND ja.active = 1
+  WHERE u.role = 'judge'
+    AND u.status = 'active'
+  GROUP BY u.user_id
+  ORDER BY COUNT(ja.assignment_id) ASC, u.created_at ASC
+  LIMIT 1;
+
+  SET candidate_exists = candidate_judge IS NOT NULL;
+
+  IF candidate_exists THEN
+    UPDATE events SET assigned_judge_id = candidate_judge WHERE event_id = p_event_id;
+    INSERT INTO judge_assignments (event_id, judge_id)
+      VALUES (p_event_id, candidate_judge)
+      ON DUPLICATE KEY UPDATE active = VALUES(active), assigned_at = VALUES(assigned_at);
+  END IF;
+END//
+
+CREATE PROCEDURE sp_refresh_sponsorship_total(IN p_event_id INT)
+BEGIN
+  UPDATE events e
+  JOIN (
+    SELECT COALESCE(SUM(s.amount), 0) AS sponsorship_total
+    FROM sponsorships s
+    WHERE s.event_id = p_event_id
+      AND s.status = 'confirmed'
+  ) totals
+    ON 1=1
+  SET e.sponsorship_total = totals.sponsorship_total,
+      e.updated_at = CURRENT_TIMESTAMP
+  WHERE e.event_id = p_event_id;
 END//
 
 DELIMITER ;

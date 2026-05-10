@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "check:db": "node scripts/checkDatabase.js"
+    "check:db": "node scripts/checkDatabase.js",
+    "setup:db": "node scripts/setupDatabase.js",
+    "validate:schema": "node scripts/validateSchema.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

@@ -10,7 +10,7 @@ router.get("/admin", authRequired, async (_req, res, next) => {
     const [[{ total_users }]] = await pool.query("SELECT COUNT(*) AS total_users FROM users");
     const [[{ active_users }]] = await pool.query("SELECT COUNT(*) AS active_users FROM users WHERE status = 'active'");
     const [[{ total_events }]] = await pool.query("SELECT COUNT(*) AS total_events FROM events");
-    const [[{ total_registrations }]] = await pool.query("SELECT COUNT(*) AS total_registrations FROM participants");
+    const [[{ total_registrations }]] = await pool.query("SELECT COUNT(*) AS total_registrations FROM registrations");
     const [[{ revenue_completed }]] = await pool.query(
       "SELECT COALESCE(SUM(amount),0) AS revenue_completed FROM payments WHERE status='completed'"
     );
@@ -31,15 +31,15 @@ router.get("/admin", authRequired, async (_req, res, next) => {
     // Venue utilization
     const [venueUtil] = await pool.query("SELECT * FROM venue_utilization_stats");
 
-    // Top programs by registration
+    // Top programs by confirmed registration
     const [topPrograms] = await pool.query(
       `
-      SELECT e.event_id, e.event_name, e.category, 
-             COUNT(p.participant_id) as registered,
+      SELECT e.event_id, e.event_name, e.category,
+             COALESCE(COUNT(r.registration_id), 0) AS registered,
              e.max_participants,
              v.venue_name
       FROM events e
-      LEFT JOIN participants p ON e.event_id = p.event_id
+      LEFT JOIN registrations r ON r.event_id = e.event_id AND r.status = 'confirmed'
       LEFT JOIN venues v ON e.venue_id = v.venue_id
       GROUP BY e.event_id
       ORDER BY registered DESC
@@ -60,21 +60,21 @@ router.get("/admin", authRequired, async (_req, res, next) => {
     // Sponsor tier distribution
     const [sponsorTiers] = await pool.query(
       `
-      SELECT sponsorship_tier, COUNT(*) as count
+      SELECT tier as sponsorship_tier, COUNT(*) as count
       FROM sponsors
-      GROUP BY sponsorship_tier
+      GROUP BY tier
       `
     );
 
     // Recent activity
     const [recentActivity] = await pool.query(
       `
-      SELECT u.user_id, u.name, p.participant_id, e.event_name, p.registration_date, py.status
-      FROM participants p
-      JOIN users u ON p.user_id = u.user_id
-      JOIN events e ON p.event_id = e.event_id
-      LEFT JOIN payments py ON py.user_id = u.user_id AND py.event_id = e.event_id
-      ORDER BY p.registration_date DESC
+      SELECT u.user_id, u.name, r.registration_id, e.event_name, r.registered_at AS registration_date, p.status
+      FROM registrations r
+      JOIN users u ON r.user_id = u.user_id
+      JOIN events e ON r.event_id = e.event_id
+      LEFT JOIN payments p ON p.registration_id = r.registration_id
+      ORDER BY r.registered_at DESC
       LIMIT 15
       `
     );
@@ -114,31 +114,33 @@ router.get("/participant", authRequired, async (req, res, next) => {
     // My registered events
     const [myEvents] = await pool.query(
       `
-      SELECT e.event_id, e.event_name, e.category, e.event_date, 
-             e.registration_fee, v.venue_name,
-             COUNT(p.participant_id) as current_registrations,
+      SELECT e.event_id, e.event_name, e.category, e.event_date,
+             e.registration_fee, v.venue_name, r.status,
+             COALESCE(COUNT(DISTINCT r2.registration_id), 0) AS current_registrations,
              e.max_participants
-      FROM participants p
-      JOIN events e ON e.event_id = p.event_id
+      FROM registrations r
+      JOIN events e ON e.event_id = r.event_id
       LEFT JOIN venues v ON v.venue_id = e.venue_id
-      WHERE p.user_id = ?
+      LEFT JOIN registrations r2 ON r2.event_id = e.event_id AND r2.status = 'confirmed'
+      WHERE r.user_id = ?
       GROUP BY e.event_id
       ORDER BY e.event_date ASC
       `,
       [userId]
     );
 
-    // Upcoming events
+    // Upcoming events (not yet registered)
     const [upcomingEvents] = await pool.query(
       `
-      SELECT e.event_id, e.event_name, e.category, e.event_date, 
+      SELECT e.event_id, e.event_name, e.category, e.event_date,
              e.registration_fee, v.venue_name,
-             TIMESTAMPDIFF(DAY, NOW(), e.event_date) as days_until
+             TIMESTAMPDIFF(DAY, NOW(), e.event_date) AS days_until
       FROM events e
       LEFT JOIN venues v ON v.venue_id = e.venue_id
       WHERE e.event_date > NOW()
       AND e.event_id NOT IN (
-        SELECT event_id FROM participants WHERE user_id = ?
+        SELECT r.event_id FROM registrations r
+        WHERE r.user_id = ?
       )
       ORDER BY e.event_date ASC
       LIMIT 10
@@ -149,10 +151,11 @@ router.get("/participant", authRequired, async (req, res, next) => {
     // Payment history
     const [payments] = await pool.query(
       `
-      SELECT py.payment_id, e.event_name, py.amount, py.payment_type, 
-             py.status, py.payment_date, py.event_id
-      FROM payments py
-      LEFT JOIN events e ON py.event_id = e.event_id
+      SELECT p.payment_id, e.event_name, p.amount, p.payment_type,
+             p.status, p.created_at AS payment_date, p.event_id
+      FROM payments p
+      LEFT JOIN registrations r ON p.registration_id = r.registration_id
+      LEFT JOIN events e ON p.event_id = e.event_id
       WHERE py.user_id = ?
       ORDER BY py.payment_date DESC
       LIMIT 20
@@ -177,8 +180,8 @@ router.get("/participant", authRequired, async (req, res, next) => {
     // Team memberships
     const [teams] = await pool.query(
       `
-      SELECT DISTINCT t.team_id, t.team_name, e.event_name, 
-             COUNT(*) as member_count
+      SELECT DISTINCT t.team_id, t.team_name, e.event_name,
+             COUNT(DISTINCT tm.user_id) AS member_count
       FROM team_members tm
       JOIN teams t ON tm.team_id = t.team_id
       LEFT JOIN events e ON t.event_id = e.event_id
@@ -189,31 +192,19 @@ router.get("/participant", authRequired, async (req, res, next) => {
       [userId]
     );
 
-    // Leaderboard positions
-    // const [leaderboards] = await pool.query(
-    //   `
-    //   SELECT le.event_id, e.event_name, le.rank, le.score, le.team_id
-    //   FROM leaderboards le
-    //   JOIN events e ON le.event_id = e.event_id
-    //   WHERE le.user_id = ?
-    //   ORDER BY le.event_id, le.rank
-    //   LIMIT 10
-    //   `,
-    //   [userId]
-    // );
-    const leaderboards = []; // Placeholder until leaderboards table is created
-
     // Statistics
     const [[{ registered_count }]] = await pool.query(
-      "SELECT COUNT(*) as registered_count FROM participants WHERE user_id = ?",
+      `SELECT COUNT(*) AS registered_count
+       FROM registrations r
+       WHERE r.user_id = ?`,
       [userId]
     );
     const [[{ paid_count }]] = await pool.query(
-      "SELECT COUNT(*) as paid_count FROM payments WHERE user_id = ? AND status = 'completed'",
+      "SELECT COUNT(*) AS paid_count FROM payments WHERE user_id = ? AND status = 'completed'",
       [userId]
     );
     const [[{ pending_payment }]] = await pool.query(
-      "SELECT COUNT(*) as pending_payment FROM payments WHERE user_id = ? AND status = 'pending'",
+      "SELECT COUNT(*) AS pending_payment FROM payments WHERE user_id = ? AND status = 'pending'",
       [userId]
     );
 
@@ -225,7 +216,6 @@ router.get("/participant", authRequired, async (req, res, next) => {
         payments,
         accommodation,
         teams,
-        leaderboards,
         stats: { registered_count, paid_count, pending_payment },
       },
     });
@@ -238,8 +228,11 @@ router.get("/judge", authRequired, async (req, res, next) => {
   try {
     const userId = req.user.user_id;
 
-    // Get judge ID
-    const [judgeRows] = await pool.query("SELECT judge_id FROM judges WHERE user_id = ? LIMIT 1", [userId]);
+    // Confirm judge identity
+    const [judgeRows] = await pool.query(
+      "SELECT user_id AS judge_id FROM users WHERE user_id = ? AND role = 'judge' LIMIT 1",
+      [userId]
+    );
     const judgeId = judgeRows[0]?.judge_id;
 
     if (!judgeId) {
@@ -249,13 +242,13 @@ router.get("/judge", authRequired, async (req, res, next) => {
     // Assigned events
     const [assigned] = await pool.query(
       `
-      SELECT DISTINCT je.event_id, e.event_name, e.category, 
-             e.event_date, COUNT(r.round_id) as total_rounds
-      FROM judge_events je
-      JOIN events e ON je.event_id = e.event_id
-      LEFT JOIN rounds r ON e.event_id = r.event_id
-      WHERE je.judge_id = ?
-      GROUP BY je.event_id
+      SELECT DISTINCT ja.event_id, e.event_name, e.category,
+             e.event_date, COUNT(er.round_id) AS total_rounds
+      FROM judge_assignments ja
+      JOIN events e ON ja.event_id = e.event_id
+      LEFT JOIN event_rounds er ON e.event_id = er.event_id
+      WHERE ja.judge_id = ?
+      GROUP BY ja.event_id
       ORDER BY e.event_date ASC
       `,
       [judgeId]
@@ -264,14 +257,14 @@ router.get("/judge", authRequired, async (req, res, next) => {
     // Submitted scores
     const [submitted] = await pool.query(
       `
-      SELECT s.score_id, e.event_name, t.team_name, s.score, 
-             s.comments, s.submission_date, r.round_name
+      SELECT s.score_id, e.event_name, t.team_name, s.score,
+             s.comments, s.created_at AS submission_date, er.round_type AS round_name
       FROM scores s
-      JOIN rounds r ON s.round_id = r.round_id
-      JOIN events e ON r.event_id = e.event_id
-      LEFT JOIN teams t ON s.team_id = t.team_id
+      JOIN events e ON s.event_id = e.event_id
+      LEFT JOIN teams t ON s.participant_id = t.team_id
+      LEFT JOIN event_rounds er ON er.event_id = e.event_id
       WHERE s.judge_id = ?
-      ORDER BY s.submission_date DESC
+      ORDER BY s.created_at DESC
       LIMIT 20
       `,
       [judgeId]
@@ -280,17 +273,18 @@ router.get("/judge", authRequired, async (req, res, next) => {
     // Pending evaluations
     const [pending] = await pool.query(
       `
-      SELECT DISTINCT r.round_id, r.round_name, e.event_name, 
-             COUNT(DISTINCT CASE WHEN s.score_id IS NULL THEN t.team_id END) as teams_pending
-      FROM rounds r
-      JOIN events e ON r.event_id = e.event_id
+      SELECT er.round_id, er.round_type AS round_name, e.event_name,
+             COUNT(DISTINCT t.team_id) AS teams_pending
+      FROM event_rounds er
+      JOIN events e ON er.event_id = e.event_id
       LEFT JOIN teams t ON e.event_id = t.event_id
-      LEFT JOIN scores s ON r.round_id = s.round_id AND t.team_id = s.team_id AND s.judge_id = ?
+      LEFT JOIN scores s ON s.event_id = e.event_id AND s.participant_id = t.team_id AND s.judge_id = ?
       WHERE e.event_id IN (
-        SELECT event_id FROM judge_events WHERE judge_id = ?
+        SELECT event_id FROM judge_assignments WHERE judge_id = ?
       )
-      AND r.round_status = 'ongoing'
-      GROUP BY r.round_id
+      AND er.status = 'ongoing'
+      AND s.score_id IS NULL
+      GROUP BY er.round_id, e.event_name
       HAVING teams_pending > 0
       `,
       [judgeId, judgeId]
@@ -299,16 +293,13 @@ router.get("/judge", authRequired, async (req, res, next) => {
     // Leaderboard snapshots
     const [leaderboard] = await pool.query(
       `
-      SELECT le.rank, COALESCE(t.team_name, u.name) as participant,
-             le.score, e.event_name, le.event_id
-      FROM leaderboards le
-      JOIN events e ON le.event_id = e.event_id
-      LEFT JOIN teams t ON le.team_id = t.team_id
-      LEFT JOIN users u ON le.user_id = u.user_id
+      SELECT rank, participant_name AS participant, average_score AS score, e.event_name, event_id
+      FROM vw_event_leaderboard
+      JOIN events e ON vw_event_leaderboard.event_id = e.event_id
       WHERE e.event_id IN (
-        SELECT event_id FROM judge_events WHERE judge_id = ?
+        SELECT event_id FROM judge_assignments WHERE judge_id = ?
       )
-      ORDER BY le.event_id, le.rank
+      ORDER BY event_id, rank
       LIMIT 25
       `,
       [judgeId]
@@ -316,28 +307,28 @@ router.get("/judge", authRequired, async (req, res, next) => {
 
     // Statistics
     const [[{ assigned_count }]] = await pool.query(
-      "SELECT COUNT(DISTINCT event_id) as assigned_count FROM judge_events WHERE judge_id = ?",
+      "SELECT COUNT(DISTINCT event_id) AS assigned_count FROM judge_assignments WHERE judge_id = ?",
       [judgeId]
     );
     const [[{ submitted_count }]] = await pool.query(
-      "SELECT COUNT(*) as submitted_count FROM scores WHERE judge_id = ?",
+      "SELECT COUNT(*) AS submitted_count FROM scores WHERE judge_id = ?",
       [judgeId]
     );
     const [[{ pending_count }]] = await pool.query(
       `
-      SELECT COUNT(*) as pending_count
+      SELECT COUNT(*) AS pending_count
       FROM (
-        SELECT DISTINCT r.round_id, t.team_id
-        FROM rounds r
-        JOIN events e ON r.event_id = e.event_id
+        SELECT DISTINCT er.round_id, t.team_id
+        FROM event_rounds er
+        JOIN events e ON er.event_id = e.event_id
         JOIN teams t ON e.event_id = t.event_id
-        LEFT JOIN scores s ON r.round_id = s.round_id AND t.team_id = s.team_id AND s.judge_id = ?
+        LEFT JOIN scores s ON s.event_id = e.event_id AND s.participant_id = t.team_id AND s.judge_id = ?
         WHERE e.event_id IN (
-          SELECT event_id FROM judge_events WHERE judge_id = ?
+          SELECT event_id FROM judge_assignments WHERE judge_id = ?
         )
-        AND r.round_status = 'ongoing'
+        AND er.status = 'ongoing'
         AND s.score_id IS NULL
-      ) as pending
+      ) AS pending
       `,
       [judgeId, judgeId]
     );
@@ -364,14 +355,14 @@ router.get("/organizer", authRequired, async (req, res, next) => {
     // My events
     const [events] = await pool.query(
       `
-      SELECT e.event_id, e.event_name, e.category, e.event_date, 
+      SELECT e.event_id, e.event_name, e.category, e.event_date,
              e.registration_fee, v.venue_name, e.event_status,
-             COUNT(p.participant_id) as registered_participants,
+             COALESCE(SUM(CASE WHEN r.status = 'confirmed' THEN 1 ELSE 0 END), 0) AS registered_participants,
              e.max_participants,
-             ROUND((COUNT(p.participant_id) / e.max_participants * 100), 1) as fill_rate
+             ROUND((COALESCE(SUM(CASE WHEN r.status = 'confirmed' THEN 1 ELSE 0 END), 0) / e.max_participants * 100), 1) AS fill_rate
       FROM events e
       LEFT JOIN venues v ON v.venue_id = e.venue_id
-      LEFT JOIN participants p ON e.event_id = p.event_id
+      LEFT JOIN registrations r ON e.event_id = r.event_id
       WHERE e.organizer_id = ?
       GROUP BY e.event_id
       ORDER BY e.event_date ASC
@@ -382,13 +373,12 @@ router.get("/organizer", authRequired, async (req, res, next) => {
     // Judge assignments
     const [judges] = await pool.query(
       `
-      SELECT DISTINCT j.judge_id, u.name, u.email, 
-             COUNT(je.event_id) as assigned_events
-      FROM judges j
-      JOIN users u ON j.user_id = u.user_id
-      LEFT JOIN judge_events je ON j.judge_id = je.judge_id
-      WHERE j.organizer_id = ?
-      GROUP BY j.judge_id
+      SELECT u.user_id AS judge_id, u.name, u.email,
+             COUNT(ja.event_id) AS assigned_events
+      FROM users u
+      LEFT JOIN judge_assignments ja ON u.user_id = ja.judge_id AND ja.active = 1
+      WHERE u.role = 'judge'
+      GROUP BY u.user_id
       `,
       [userId]
     );
@@ -396,13 +386,13 @@ router.get("/organizer", authRequired, async (req, res, next) => {
     // Event rounds
     const [rounds] = await pool.query(
       `
-      SELECT r.round_id, r.event_id, e.event_name, r.round_name, 
-             r.round_date, r.round_status, v.venue_name
-      FROM rounds r
-      JOIN events e ON r.event_id = e.event_id
-      LEFT JOIN venues v ON r.venue_id = v.venue_id
+      SELECT er.round_id, er.event_id, e.event_name, er.round_type AS round_name,
+             er.round_date, er.status AS round_status, v.venue_name
+      FROM event_rounds er
+      JOIN events e ON er.event_id = e.event_id
+      LEFT JOIN venues v ON er.venue_id = v.venue_id
       WHERE e.organizer_id = ?
-      ORDER BY r.round_date ASC
+      ORDER BY er.round_date ASC
       `,
       [userId]
     );
@@ -410,18 +400,18 @@ router.get("/organizer", authRequired, async (req, res, next) => {
     // Venue conflicts (if any)
     const [venueConflicts] = await pool.query(
       `
-      SELECT v.venue_id, v.venue_name, 
-             GROUP_CONCAT(e.event_name SEPARATOR ', ') as conflicting_events,
-             COUNT(DISTINCT r1.round_id) as total_rounds
+      SELECT v.venue_id, v.venue_name,
+             GROUP_CONCAT(DISTINCT e.event_name SEPARATOR ', ') AS conflicting_events,
+             COUNT(DISTINCT er1.round_id) AS total_rounds
       FROM venues v
-      JOIN rounds r1 ON v.venue_id = r1.venue_id
-      JOIN events e ON r1.event_id = e.event_id
+      JOIN event_rounds er1 ON v.venue_id = er1.venue_id
+      JOIN events e ON er1.event_id = e.event_id
       WHERE e.organizer_id = ?
       AND EXISTS (
-        SELECT 1 FROM rounds r2 
-        WHERE r2.venue_id = v.venue_id 
-        AND r2.round_date = r1.round_date 
-        AND r2.round_id != r1.round_id
+        SELECT 1 FROM event_rounds er2
+        WHERE er2.venue_id = v.venue_id
+          AND er2.round_date = er1.round_date
+          AND er2.round_id != er1.round_id
       )
       GROUP BY v.venue_id
       LIMIT 10
@@ -436,9 +426,9 @@ router.get("/organizer", authRequired, async (req, res, next) => {
     );
     const [[{ total_registrations }]] = await pool.query(
       `
-      SELECT COALESCE(SUM(COUNT(p.participant_id)), 0) as total_registrations
+      SELECT COUNT(r.registration_id) as total_registrations
       FROM events e
-      LEFT JOIN participants p ON e.event_id = p.event_id
+      JOIN registrations r ON r.event_id = e.event_id
       WHERE e.organizer_id = ?
       `,
       [userId]
@@ -447,9 +437,9 @@ router.get("/organizer", authRequired, async (req, res, next) => {
       `
       SELECT ROUND(AVG(fill_rate), 1) as avg_fill_rate
       FROM (
-        SELECT ROUND((COUNT(p.participant_id) / e.max_participants * 100), 1) as fill_rate
+        SELECT ROUND((COUNT(CASE WHEN r.status = 'confirmed' THEN 1 END) / e.max_participants * 100), 1) as fill_rate
         FROM events e
-        LEFT JOIN participants p ON e.event_id = p.event_id
+        LEFT JOIN registrations r ON e.event_id = r.event_id
         WHERE e.organizer_id = ?
         GROUP BY e.event_id
       ) as rates
@@ -487,10 +477,10 @@ router.get("/sponsor", authRequired, async (req, res, next) => {
     // Sponsor information
     const [sponsorInfo] = await pool.query(
       `
-      SELECT s.sponsor_id, u.name, s.sponsorship_tier, s.contribution_amount,
-             s.start_date, s.end_date, s.contract_status, u.email
+      SELECT s.sponsor_id, u.name, s.tier as sponsorship_tier, s.company_name,
+             s.email, s.phone, u.email as user_email
       FROM sponsors s
-      JOIN users u ON s.user_id = u.user_id
+      LEFT JOIN users u ON s.user_id = u.user_id
       WHERE s.sponsor_id = ?
       LIMIT 1
       `,
@@ -500,15 +490,14 @@ router.get("/sponsor", authRequired, async (req, res, next) => {
     // Sponsored events
     const [sponsoredEvents] = await pool.query(
       `
-      SELECT se.event_id, e.event_name, e.category, e.event_date,
-             COUNT(p.participant_id) as participants_reached,
-             COALESCE(SUM(py.amount), 0) as sponsorship_contribution
-      FROM sponsor_events se
-      JOIN events e ON se.event_id = e.event_id
-      LEFT JOIN participants p ON e.event_id = p.event_id
-      LEFT JOIN payments py ON e.event_id = py.event_id AND py.payment_type = 'sponsorship'
-      WHERE se.sponsor_id = ?
-      GROUP BY se.event_id
+      SELECT s.event_id, e.event_name, e.category, e.event_date,
+             COALESCE(COUNT(r.registration_id), 0) as participants_reached,
+             COALESCE(SUM(sp.amount), 0) as sponsorship_contribution
+      FROM sponsorships sp
+      JOIN events e ON sp.event_id = e.event_id
+      LEFT JOIN registrations r ON r.event_id = e.event_id AND r.status = 'confirmed'
+      WHERE sp.sponsor_id = ?
+      GROUP BY s.event_id, e.event_name, e.category, e.event_date
       ORDER BY e.event_date DESC
       `,
       [sponsorId]
@@ -517,46 +506,45 @@ router.get("/sponsor", authRequired, async (req, res, next) => {
     // Payment records
     const [payments] = await pool.query(
       `
-      SELECT py.payment_id, py.amount, py.payment_date, py.status,
+      SELECT py.payment_id, py.amount, py.created_at AS payment_date, py.status,
              e.event_name, py.payment_type
       FROM payments py
       LEFT JOIN events e ON py.event_id = e.event_id
-      WHERE py.sponsor_id = ?
-      ORDER BY py.payment_date DESC
+      WHERE py.user_id = ?
+      ORDER BY py.created_at DESC
       LIMIT 30
       `,
-      [sponsorId]
+      [userId]
     );
 
     // Sponsorship history/summary
     const [history] = await pool.query(
       `
-      SELECT s.sponsorship_id, e.event_name, s.amount, s.sponsorship_date,
-             s.sponsorship_status
-      FROM sponsorships s
-      LEFT JOIN events e ON s.event_id = e.event_id
-      WHERE s.sponsor_id = ?
-      ORDER BY s.sponsorship_date DESC
+      SELECT sp.sponsorship_id, e.event_name, sp.amount, sp.sponsored_at AS sponsorship_date,
+             sp.status AS sponsorship_status, sp.tier
+      FROM sponsorships sp
+      LEFT JOIN events e ON sp.event_id = e.event_id
+      WHERE sp.sponsor_id = ?
+      ORDER BY sp.sponsored_at DESC
       `,
       [sponsorId]
     );
 
     // Statistics
     const [[{ total_contribution }]] = await pool.query(
-      "SELECT COALESCE(SUM(contribution_amount), 0) as total_contribution FROM sponsors WHERE sponsor_id = ?",
+      `SELECT COALESCE(SUM(amount), 0) AS total_contribution FROM sponsorships WHERE sponsor_id = ? AND status = 'confirmed'`,
       [sponsorId]
     );
     const [[{ events_sponsored }]] = await pool.query(
-      "SELECT COUNT(*) as events_sponsored FROM sponsor_events WHERE sponsor_id = ?",
+      `SELECT COUNT(DISTINCT event_id) AS events_sponsored FROM sponsorships WHERE sponsor_id = ?`,
       [sponsorId]
     );
     const [[{ total_reach }]] = await pool.query(
       `
-      SELECT COALESCE(SUM(COUNT(DISTINCT p.participant_id)), 0) as total_reach
-      FROM sponsor_events se
-      LEFT JOIN events e ON se.event_id = e.event_id
-      LEFT JOIN participants p ON e.event_id = p.event_id
-      WHERE se.sponsor_id = ?
+      SELECT COALESCE(COUNT(DISTINCT r.registration_id), 0) AS total_reach
+      FROM sponsorships sp
+      LEFT JOIN registrations r ON r.event_id = sp.event_id AND r.status = 'confirmed'
+      WHERE sp.sponsor_id = ?
       `,
       [sponsorId]
     );

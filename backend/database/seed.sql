@@ -1,13 +1,138 @@
+-- Sample Data for SOFTEC Event Management System (Updated Schema)
+-- This file provides test data to validate the new schema
+
 USE softec_db;
 
 SET @dev_hash = '$2a$10$CwTycUXWue0Thq9StjUM0uJ8o6wLYuGkU2m0rQzS9Wy2R3sjJq3Rq';
 
-INSERT INTO users (user_id, name, email, password_hash, role, status) VALUES
-(1,'Aisha Khan','aisha@softec.org',@dev_hash,'admin','active'),
-(2,'Sana Riaz','sana@softec.org',@dev_hash,'organizer','active'),
-(3,'Hamza Qureshi','hamza.organizer@softec.org',@dev_hash,'organizer','active'),
-(4,'Minaal Sheikh','minaal.organizer@softec.org',@dev_hash,'organizer','active'),
-(5,'Taha Javed','taha.organizer@softec.org',@dev_hash,'organizer','active'),
+-- Add test users with new roles
+INSERT INTO users (name, email, password_hash, role, status, organization, phone) VALUES
+('Aisha Khan','aisha@softec.org',@dev_hash,'admin','active','SOFTEC','1111111111'),
+('Sana Riaz','sana@softec.org',@dev_hash,'organizer','active','Tech Events Inc','2222222222'),
+('Hamza Qureshi','hamza.organizer@softec.org',@dev_hash,'organizer','active','Event Corp','3333333333'),
+('Minaal Sheikh','minaal.organizer@softec.org',@dev_hash,'organizer','active','Event Mgmt','4444444444'),
+('Taha Javed','taha.organizer@softec.org',@dev_hash,'organizer','active','Tech Academy','5555555555'),
+('Sarah Judge','sarah.judge@softec.org',@dev_hash,'judge','active','Tech Academy','6666666666'),
+('Mark Judge','mark.judge@softec.org',@dev_hash,'judge','active','Education Institute','7777777777'),
+('Tech Sponsor','tech.sponsor@softec.org',@dev_hash,'sponsor','active','Tech Corp Ltd','8888888888'),
+('Alice Participant','alice.p@softec.org',@dev_hash,'participant','active',NULL,'9999999999'),
+('Bob Participant','bob.p@softec.org',@dev_hash,'participant','active',NULL,'1010101010'),
+('Charlie Participant','charlie.p@softec.org',@dev_hash,'participant','active',NULL,'1111111111'),
+('Diana Participant','diana.p@softec.org',@dev_hash,'participant','active',NULL,'1212121212'),
+('Eve Participant','eve.p@softec.org',@dev_hash,'participant','active',NULL,'1313131313');
+
+-- Add venues
+INSERT INTO venues (venue_name, capacity, facilities, location) VALUES
+('Convention Center Downtown',500,'WiFi, Parking, Catering, AV Equipment','Downtown, Main City'),
+('Tech Hub Arena',300,'WiFi, Parking, Cafeteria','Innovation District'),
+('University Auditorium',400,'WiFi, Audio System, Projection','Campus Street'),
+('Grand Hotel Ballroom',250,'WiFi, Catering, AV, VIP Lounge','Hotel Plaza');
+
+-- Add sponsors
+INSERT INTO sponsors (user_id, tier, company_name, email, phone) VALUES
+(8,'platinum','Tech Corp Ltd','tech.sponsor@softec.org','8888888888');
+
+-- Add events with new fields
+INSERT INTO events (
+  event_name, description, category, event_date, max_participants,
+  registration_fee, prize_pool, organizer_id, venue_id,
+  assigned_judge_id, event_status
+) VALUES
+(
+  'Tech Summit 2024','Annual technology innovation conference','Technology',
+  DATE_ADD(NOW(), INTERVAL 30 DAY),100,50.00,5000.00,2,1,6,'open'
+),
+(
+  'Mobile App Hackathon','Build innovative mobile applications','Development',
+  DATE_ADD(NOW(), INTERVAL 45 DAY),80,30.00,3000.00,2,2,7,'open'
+),
+(
+  'AI Workshop Series','Learn artificial intelligence fundamentals','Technology',
+  DATE_ADD(NOW(), INTERVAL 60 DAY),60,75.00,2000.00,3,3,6,'created'
+);
+
+-- Add event rounds (replaces legacy rounds table)
+INSERT INTO event_rounds (event_id, round_type, round_date, start_time, end_time, status, venue_id) VALUES
+(1,'Keynote',DATE_ADD(NOW(), INTERVAL 30 DAY),'09:00:00','10:30:00','scheduled',1),
+(1,'Technical Sessions',DATE_ADD(NOW(), INTERVAL 30 DAY),'10:45:00','13:00:00','scheduled',1),
+(1,'Networking',DATE_ADD(NOW(), INTERVAL 30 DAY),'13:00:00','14:00:00','scheduled',1),
+(2,'Kickoff',DATE_ADD(NOW(), INTERVAL 45 DAY),'09:00:00','10:00:00','scheduled',2),
+(2,'Development',DATE_ADD(NOW(), INTERVAL 45 DAY),'10:00:00','17:00:00','scheduled',2),
+(2,'Final Presentations',DATE_ADD(NOW(), INTERVAL 46 DAY),'09:00:00','12:00:00','scheduled',2);
+
+-- Add judge assignments (replaces legacy judge tracking)
+INSERT INTO judge_assignments (event_id, judge_id, assigned_by, active) VALUES
+(1,6,1,1),
+(2,7,1,1),
+(3,6,1,1);
+
+-- Add sponsorships (replaces sponsor_events table)
+INSERT INTO sponsorships (sponsor_id, event_id, amount, tier, status, sponsored_at) VALUES
+(1,1,10000.00,'platinum','confirmed',NOW()),
+(1,2,5000.00,'gold','confirmed',NOW());
+
+-- Add registrations (replaces participants table)
+INSERT INTO registrations (user_id, event_id, status, registered_at) VALUES
+(9,1,'confirmed',NOW()),
+(10,1,'confirmed',NOW()),
+(11,1,'confirmed',NOW()),
+(12,1,'confirmed',NOW()),
+(13,1,'confirmed',NOW()),
+(9,2,'confirmed',NOW()),
+(10,2,'confirmed',NOW()),
+(11,2,'confirmed',NOW()),
+(13,3,'pending',NOW());
+
+-- Add payments (unified payment tracking)
+INSERT INTO payments (
+  user_id, registration_id, event_id, sponsor_id, amount,
+  payment_type, status, created_at
+) VALUES
+(9,1,1,NULL,50.00,'registration','completed',NOW()),
+(10,2,1,NULL,50.00,'registration','completed',NOW()),
+(11,3,1,NULL,50.00,'registration','completed',NOW()),
+(12,4,1,NULL,50.00,'registration','completed',NOW()),
+(13,5,1,NULL,50.00,'registration','completed',NOW()),
+(9,6,2,NULL,30.00,'registration','completed',NOW()),
+(10,7,2,NULL,30.00,'registration','completed',NOW()),
+(11,8,2,NULL,30.00,'registration','completed',NOW()),
+(13,9,3,NULL,75.00,'registration','pending',NOW()),
+(8,NULL,1,1,10000.00,'sponsorship','completed',NOW()),
+(8,NULL,2,1,5000.00,'sponsorship','completed',NOW());
+
+-- Add teams
+INSERT INTO teams (team_name, event_id, created_by) VALUES
+('Tech Innovators',1,9),
+('Code Masters',2,10),
+('AI Explorers',3,13);
+
+-- Add team members
+INSERT INTO team_members (team_id, user_id, joined_at) VALUES
+(1,9,NOW()),
+(1,10,NOW()),
+(2,10,NOW()),
+(2,11,NOW()),
+(3,13,NOW());
+
+-- Add sample scores from judges
+INSERT INTO scores (event_id, judge_id, participant_id, score, comments, created_at) VALUES
+(1,6,1,85.5,'Excellent presentation and innovation',NOW()),
+(1,6,2,78.0,'Good technical skills, needs improvement in presentation',NOW()),
+(1,6,3,92.0,'Outstanding work, highly recommended',NOW()),
+(2,7,2,88.0,'Clean code and good UX design',NOW()),
+(2,7,3,81.5,'Functional but needs performance optimization',NOW());
+
+-- Add accommodations
+INSERT INTO accommodations (venue_name, room_type, capacity, price_per_night, availability) VALUES
+('Downtown Hotel','Single Room',50,100.00,30),
+('Downtown Hotel','Double Room',40,150.00,25),
+('Campus Guest House','Single Room',100,75.00,50);
+
+-- Add accommodation bookings
+INSERT INTO user_accommodations (user_id, accommodation_id, check_in, check_out) VALUES
+(9,1,DATE_ADD(NOW(), INTERVAL 29 DAY),DATE_ADD(NOW(), INTERVAL 31 DAY)),
+(10,2,DATE_ADD(NOW(), INTERVAL 29 DAY),DATE_ADD(NOW(), INTERVAL 31 DAY)),
+(11,3,DATE_ADD(NOW(), INTERVAL 29 DAY),DATE_ADD(NOW(), INTERVAL 31 DAY));
 (6,'Rabia Noor','rabia.organizer@softec.org',@dev_hash,'organizer','active'),
 (7,'Bilal Ahmed','bilal@nu.edu.pk',@dev_hash,'participant','active'),
 (8,'Hira Iqbal','hira@nu.edu.pk',@dev_hash,'participant','active'),
