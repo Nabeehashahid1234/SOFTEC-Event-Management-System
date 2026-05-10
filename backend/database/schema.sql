@@ -371,6 +371,7 @@ CREATE TABLE passes (
   issued_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   status ENUM('issued','redeemed','cancelled') NOT NULL DEFAULT 'issued',
   qr_code VARCHAR(255) NULL,
+  CONSTRAINT uq_passes_participant_event UNIQUE (participant_id, event_id),
   CONSTRAINT fk_passes_participant FOREIGN KEY (participant_id) REFERENCES participants(participant_id) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT fk_passes_event FOREIGN KEY (event_id) REFERENCES events(event_id) ON DELETE CASCADE ON UPDATE CASCADE,
   INDEX idx_passes_event_id (event_id)
