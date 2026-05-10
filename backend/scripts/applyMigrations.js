@@ -38,7 +38,7 @@ async function main() {
       "Database appears empty. Run node scripts/setupDatabase.js to create the base schema before applying migrations."
     );
   }
-
+// Apply each migration file in order
   try {
     for (const file of files) {
       const sql = fs.readFileSync(path.join(migrationDir, file), "utf8");
