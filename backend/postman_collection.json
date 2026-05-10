@@ -1,0 +1,274 @@
+{
+  "info": {
+    "name": "SOFTEC Event Management System API",
+    "_postman_id": "softec-event-management-system",
+    "description": "Postman collection for the SOFTEC Event Management System backend. Set baseUrl and token collection variables before running protected requests.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000" },
+    { "key": "token", "value": "" },
+    { "key": "eventId", "value": "1" },
+    { "key": "userId", "value": "7" },
+    { "key": "participantId", "value": "1" },
+    { "key": "teamId", "value": "1" },
+    { "key": "paymentId", "value": "1" },
+    { "key": "judgingId", "value": "1" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{token}}", "type": "string" }
+    ]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"New Participant\",\n  \"email\": \"new.participant@nu.edu.pk\",\n  \"password\": \"softec2026\",\n  \"role\": \"participant\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.token) { pm.collectionVariables.set('token', json.data.token); }",
+                  "if (json.token) { pm.collectionVariables.set('token', json.token); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"aisha@softec.org\",\n  \"password\": \"softec2026\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Me",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/auth/me" }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        { "name": "List Users", "request": { "method": "GET", "url": "{{baseUrl}}/api/users?role=participant&page=1&limit=10" } },
+        { "name": "Get User", "request": { "method": "GET", "url": "{{baseUrl}}/api/users/{{userId}}" } },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/users/{{userId}}",
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"active\",\n  \"role\": \"participant\"\n}" }
+          }
+        },
+        { "name": "Delete User", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/users/{{userId}}" } }
+      ]
+    },
+    {
+      "name": "Events",
+      "item": [
+        { "name": "List Events", "request": { "method": "GET", "url": "{{baseUrl}}/api/events?category=Tech%20Events" } },
+        { "name": "Get Event", "request": { "method": "GET", "url": "{{baseUrl}}/api/events/{{eventId}}" } },
+        {
+          "name": "Create Event",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/events",
+            "body": { "mode": "raw", "raw": "{\n  \"event_name\": \"Demo API Event\",\n  \"description\": \"Created from Postman.\",\n  \"category\": \"Tech Events\",\n  \"event_date\": \"2026-07-01\",\n  \"max_participants\": 100,\n  \"venue_id\": 1,\n  \"organizer_id\": 2,\n  \"registration_fee\": 1500\n}" }
+          }
+        },
+        {
+          "name": "Update Event",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/events/{{eventId}}",
+            "body": { "mode": "raw", "raw": "{\n  \"registration_fee\": 2000\n}" }
+          }
+        },
+        { "name": "Delete Event", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/events/{{eventId}}" } },
+        {
+          "name": "Schedule Rounds",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/events/{{eventId}}/rounds",
+            "body": { "mode": "raw", "raw": "{\n  \"prelim_date\": \"2026-06-01 09:00:00\",\n  \"semi_date\": \"2026-06-01 13:00:00\",\n  \"final_date\": \"2026-06-01 17:00:00\",\n  \"venue_id\": 3\n}" }
+          }
+        },
+        {
+          "name": "Assign Judges",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/events/{{eventId}}/judges",
+            "body": { "mode": "raw", "raw": "{\n  \"judge_ids\": [1, 3]\n}" }
+          }
+        },
+        { "name": "Event Leaderboard", "request": { "method": "GET", "url": "{{baseUrl}}/api/events/{{eventId}}/leaderboard" } }
+      ]
+    },
+    {
+      "name": "Participants",
+      "item": [
+        {
+          "name": "Register For Event",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/participants/register",
+            "body": { "mode": "raw", "raw": "{\n  \"event_id\": 1\n}" }
+          }
+        },
+        { "name": "My Events", "request": { "method": "GET", "url": "{{baseUrl}}/api/participants/my-events" } },
+        { "name": "Withdraw", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/participants/{{participantId}}" } }
+      ]
+    },
+    {
+      "name": "Teams",
+      "item": [
+        {
+          "name": "Create Team",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/teams",
+            "body": { "mode": "raw", "raw": "{\n  \"team_name\": \"Postman Team\",\n  \"event_id\": 18,\n  \"member_user_ids\": [27, 28, 29]\n}" }
+          }
+        },
+        { "name": "Teams By Event", "request": { "method": "GET", "url": "{{baseUrl}}/api/teams/event/{{eventId}}" } },
+        { "name": "Delete Team", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/teams/{{teamId}}" } }
+      ]
+    },
+    {
+      "name": "Judging",
+      "item": [
+        {
+          "name": "Submit Score",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/judging",
+            "body": { "mode": "raw", "raw": "{\n  \"event_id\": 1,\n  \"judge_id\": 1,\n  \"participant_id\": 1,\n  \"score\": 9.2,\n  \"comments\": \"Strong solution.\"\n}" }
+          }
+        },
+        {
+          "name": "Edit Score",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/judging/{{judgingId}}",
+            "body": { "mode": "raw", "raw": "{\n  \"score\": 9.4,\n  \"comments\": \"Updated after review.\"\n}" }
+          }
+        },
+        { "name": "Judging Leaderboard", "request": { "method": "GET", "url": "{{baseUrl}}/api/judging/event/{{eventId}}/leaderboard" } }
+      ]
+    },
+    {
+      "name": "Sponsors",
+      "item": [
+        { "name": "List Sponsors", "request": { "method": "GET", "url": "{{baseUrl}}/api/sponsors?tier=Gold" } },
+        {
+          "name": "Create Sponsor",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/sponsors",
+            "body": { "mode": "raw", "raw": "{\n  \"company_name\": \"Demo Sponsor\",\n  \"contact_person\": \"Demo Contact\",\n  \"email\": \"demo.sponsor@example.com\",\n  \"phone\": \"0300-0000000\",\n  \"sponsorship_level\": \"Gold\",\n  \"amount\": 500000\n}" }
+          }
+        },
+        {
+          "name": "Create Sponsorship",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/sponsorships",
+            "body": { "mode": "raw", "raw": "{\n  \"sponsor_id\": 1,\n  \"event_id\": 1,\n  \"sponsorship_type\": \"Gold\",\n  \"amount\": 250000,\n  \"status\": \"pending\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "Create Payment",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/payments",
+            "body": { "mode": "raw", "raw": "{\n  \"event_id\": 18,\n  \"amount\": 0,\n  \"payment_type\": \"registration\",\n  \"status\": \"completed\"\n}" }
+          }
+        },
+        {
+          "name": "Update Payment Status",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/payments/{{paymentId}}/status",
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"completed\"\n}" }
+          }
+        },
+        { "name": "My Payment History", "request": { "method": "GET", "url": "{{baseUrl}}/api/payments/my-history" } }
+      ]
+    },
+    {
+      "name": "Accommodations",
+      "item": [
+        { "name": "List Accommodations", "request": { "method": "GET", "url": "{{baseUrl}}/api/accommodations" } },
+        {
+          "name": "Book Room",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/accommodations/book",
+            "body": { "mode": "raw", "raw": "{\n  \"accommodation_id\": 1,\n  \"check_in\": \"2026-06-01\",\n  \"check_out\": \"2026-06-04\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        { "name": "Q1 Event Participation", "request": { "method": "GET", "url": "{{baseUrl}}/api/reports/event-participation" } },
+        { "name": "Q2 High Quality Events", "request": { "method": "GET", "url": "{{baseUrl}}/api/reports/high-quality-events" } },
+        { "name": "Q3 Sponsorship Funds", "request": { "method": "GET", "url": "{{baseUrl}}/api/reports/sponsorship-funds" } },
+        { "name": "Q4 Participant Logistics", "request": { "method": "GET", "url": "{{baseUrl}}/api/reports/participant-logistics" } },
+        { "name": "Q5 Venue Utilization", "request": { "method": "GET", "url": "{{baseUrl}}/api/reports/venue-utilization" } },
+        { "name": "Q6 Leaderboard", "request": { "method": "GET", "url": "{{baseUrl}}/api/reports/leaderboard/{{eventId}}" } }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        { "name": "Admin Dashboard", "request": { "method": "GET", "url": "{{baseUrl}}/api/dashboard/admin" } },
+        { "name": "Participant Dashboard", "request": { "method": "GET", "url": "{{baseUrl}}/api/dashboard/participant" } },
+        { "name": "Organizer Dashboard", "request": { "method": "GET", "url": "{{baseUrl}}/api/dashboard/organizer" } },
+        { "name": "Judge Dashboard", "request": { "method": "GET", "url": "{{baseUrl}}/api/dashboard/judge" } },
+        { "name": "Sponsor Dashboard", "request": { "method": "GET", "url": "{{baseUrl}}/api/dashboard/sponsor" } }
+      ]
+    }
+  ]
+}
