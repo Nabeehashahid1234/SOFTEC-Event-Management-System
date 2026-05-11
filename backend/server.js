@@ -72,6 +72,7 @@ app.use((_req, res) => {
     error: "Route not found",
   });
 });
+// Global error handler
 
 app.use(errorHandler);
 
