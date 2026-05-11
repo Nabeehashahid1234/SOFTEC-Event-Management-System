@@ -19,7 +19,7 @@ export interface ApiSponsorship {
   event_id: number | null;
   sponsorship_type: "Gold" | "Silver" | "Title";
   amount: number;
-  status: "pending" | "approved" | "rejected" | "cancelled";
+  status: "pending" | "confirmed" | "rejected" | "cancelled";
   created_at: string;
   event_name?: string;
   event_date?: string;
@@ -69,7 +69,7 @@ export function useApproveSponsorship() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ sponsorshipId, adminNotes }: { sponsorshipId: number; adminNotes?: string }) => {
-      const res = await api.patch(`/sponsorships/${sponsorshipId}/approve`, { admin_notes: adminNotes });
+      const res = await api.patch(`/sponsorships/${sponsorshipId}/confirm`, { admin_notes: adminNotes });
       return res.data.data;
     },
     onSuccess: () => {

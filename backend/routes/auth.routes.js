@@ -7,6 +7,8 @@ const { authRequired } = require("../middleware/auth");
 
 const router = express.Router();
 
+const ADMIN_SECRET = process.env.ADMIN_SECRET_KEY || "admin_secret";
+
 router.post(
   "/register",
   [
@@ -14,6 +16,7 @@ router.post(
     body("email").isEmail().normalizeEmail(),
     body("password").isString().isLength({ min: 6, max: 72 }),
     body("role").isIn(["participant", "organizer", "judge", "sponsor", "admin"]),
+    body("admin_key").optional().isString(),
   ],
   async (req, res, next) => {
     try {
@@ -23,7 +26,15 @@ router.post(
         return res.status(400).json({ success: false, error: errors.array()[0].msg });
       }
 
-      const { name, email, password, role } = req.body;
+      const { name, email, password, role, admin_key } = req.body;
+
+      // Admin accounts require the secret key
+      if (role === "admin") {
+        if (!admin_key || admin_key !== ADMIN_SECRET) {
+          return res.status(403).json({ success: false, error: "Invalid admin secret key" });
+        }
+      }
+
       const passwordHash = await hashPassword(password);
 
       const [result] = await pool.query(

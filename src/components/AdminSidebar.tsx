@@ -8,11 +8,11 @@ import { cn } from "@/lib/format";
 
 const NAV = {
   admin: [
-    { to: "/admin/dashboard", label: "Control Center", icon: BarChart2 },
-    { to: "/app/users", label: "Members", icon: Users },
-    { to: "/app/events", label: "Programmes", icon: Calendar },
-    { to: "/app/sponsors", label: "Patrons", icon: Building2 },
-    { to: "/app/reports", label: "Compendium", icon: FileText },
+    { to: "/app/dashboard",  label: "Control Center", icon: BarChart2 },
+    { to: "/app/users",      label: "Members",        icon: Users     },
+    { to: "/app/events",     label: "Programmes",     icon: Calendar  },
+    { to: "/app/sponsors",   label: "Patrons",        icon: Building2 },
+    { to: "/app/reports",    label: "Compendium",     icon: FileText  },
   ],
 };
 

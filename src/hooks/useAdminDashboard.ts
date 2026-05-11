@@ -1,13 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
+import { useDashboard } from "./useDashboard";
 
+// Thin wrapper so legacy AdminDashboard component can import this without crashing.
+// All admin data is served by useDashboard when user.role === "admin".
 export function useAdminDashboard() {
-  return useQuery({
-    queryKey: ["admin-dashboard"],
-    queryFn: async () => {
-      const response = await fetch("/api/dashboard/admin");
-      if (!response.ok) throw new Error("Failed to fetch admin dashboard");
-      const data = await response.json();
-      return data.data;
-    },
-  });
+  const { loading, error, data } = useDashboard();
+  return { data, loading, error };
 }
