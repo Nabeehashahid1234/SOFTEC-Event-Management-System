@@ -178,7 +178,7 @@ function ParticipantDash({ data }: { data: any }) {
             title="No events registered yet"
             desc="Browse SOFTEC's 50+ programmes and register for the ones that interest you."
             action={
-              <Link to="/events" className="inline-flex items-center gap-2 rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90">
+              <Link to="/app/events" className="inline-flex items-center gap-2 rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90">
                 <Sparkles className="h-4 w-4" /> Browse Programmes
               </Link>
             }
@@ -278,7 +278,7 @@ function ParticipantDash({ data }: { data: any }) {
       {/* Quick actions */}
       <Section title="Quick Actions">
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          <QuickAction to="/events" icon={Calendar} label="Browse Programmes" desc="Explore all 50+ events" />
+          <QuickAction to="/app/events" icon={Calendar} label="Browse Programmes" desc="Explore all 50+ events" />
           <QuickAction to="/app/accommodation" icon={Building2} label="Book Accommodation" desc="On-campus lodging options" />
           <QuickAction to="/app/teams" icon={Users} label="My Teams" desc="Manage your event teams" />
         </div>
