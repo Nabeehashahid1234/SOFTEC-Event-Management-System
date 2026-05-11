@@ -10,6 +10,7 @@ dotenv.config({ path: path.resolve(__dirname, "../.env") });
 async function main() {
   // Define the SQL files to execute in order (based on README copy.md)
   const sqlFiles = [
+    // The order of these files is important due to dependencies (e.g., views depend on tables, triggers depend on tables, etc.)
     { name: 'schema.sql', description: 'Base schema' },
     { name: 'triggers.sql', description: 'Database triggers' },
     { name: 'procedures.sql', description: 'Stored procedures' },
