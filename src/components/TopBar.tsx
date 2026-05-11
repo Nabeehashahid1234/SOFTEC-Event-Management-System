@@ -15,7 +15,7 @@ const TITLES: Record<string, { title: string; crumbs: Crumb[] }> = {
   "/app/sponsorship":  { title: "Sponsored Programmes", crumbs: [{ label: "Home", to: "/app/dashboard" }, { label: "Sponsorship", to: "/app/sponsorship" }] },
   "/app/judging":      { title: "Adjudication",         crumbs: [{ label: "Home", to: "/app/dashboard" }, { label: "Judging", to: "/app/judging" }] },
   "/app/leaderboards": { title: "Leaderboards",         crumbs: [{ label: "Home", to: "/app/dashboard" }, { label: "Leaderboards", to: "/app/leaderboards" }] },
-  "/app/accommodation":{ title: "Lodging",              crumbs: [{ label: "Home", to: "/app/dashboard" }, { label: "Accommodation", to: "/app/accommodation" }] },
+  "/app/accommodation":{ title: "Lodging",               crumbs: [{ label: "Home", to: "/app/dashboard" }, { label: "Accommodation", to: "/app/accommodation" }] },
   "/app/teams":        { title: "Your Teams",           crumbs: [{ label: "Home", to: "/app/dashboard" }, { label: "Teams", to: "/app/teams" }] },
 };
 
@@ -31,7 +31,8 @@ export function TopBar() {
           <h2 className="font-display text-[19px] leading-none font-semibold text-foreground truncate">{meta.title}</h2>
           <nav className="flex items-center gap-1 mt-1" aria-label="Breadcrumb">
             {meta.crumbs.map((crumb, i) => (
-              <span key={crumb.to} className="flex items-center gap-1">
+              /* FIXED: Added index to key to prevent "Duplicate Key" errors when paths repeat */
+              <span key={`${crumb.to}-${i}`} className="flex items-center gap-1">
                 {i > 0 && <span className="font-mono text-[10px] text-muted-foreground/50">/</span>}
                 {i === meta.crumbs.length - 1
                   ? <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{crumb.label}</span>
