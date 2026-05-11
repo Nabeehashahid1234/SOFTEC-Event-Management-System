@@ -6,7 +6,7 @@ CREATE ROLE IF NOT EXISTS 'softec_organizer';
 CREATE ROLE IF NOT EXISTS 'softec_judge';
 CREATE ROLE IF NOT EXISTS 'softec_participant';
 CREATE ROLE IF NOT EXISTS 'softec_sponsor';
-
+-- hey
 -- Grant admin privileges
 GRANT ALL PRIVILEGES ON softec_db.* TO 'softec_admin';
 
