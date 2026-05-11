@@ -78,12 +78,22 @@ router.patch("/:id/confirm", authRequired, [param("id").isInt()], async (req, re
       }
 
       // Generate a pass/ticket if we have a participant record
+      // Generate a pass/ticket if we have a participant record
       if (participantId) {
-        const passId = (crypto.randomUUID && typeof crypto.randomUUID === "function") ? crypto.randomUUID() : crypto.createHash('sha1').update(String(participantId) + Date.now()).digest('hex');
-        const qrCode = passId; // for now the qr_code field stores the pass id; can be replaced with real QR payload
+        // 1. Generate the unique ID (UUID)
+        const passId = (crypto.randomUUID && typeof crypto.randomUUID === "function") 
+          ? crypto.randomUUID() 
+          : crypto.createHash('sha1').update(String(participantId) + Date.now()).digest('hex');
+
+        // 2. Generate a readable pass_code (THIS FIXES THE ER_NO_DEFAULT_FOR_FIELD)
+        const passCode = `PASS-${participantId}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+        
+        const qrCode = passId; 
+
         await conn.query(
-          "INSERT INTO passes (pass_id, participant_id, event_id, qr_code) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE status = VALUES(status)",
-          [passId, participantId, payment.event_id, qrCode]
+          // Added 'pass_code' to the column list and values
+          "INSERT INTO passes (pass_id, participant_id, event_id, qr_code, pass_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE status = VALUES(status)",
+          [passId, participantId, payment.event_id, qrCode, passCode]
         );
       }
     }
