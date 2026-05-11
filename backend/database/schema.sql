@@ -2,6 +2,15 @@
 -- SOFTEC '26 — Full Database Schema
 -- Run this file in MySQL Workbench to create/recreate the database.
 -- Includes: tables, views, stored procedures, triggers
+--
+-- ─── HOW TO USE ───────────────────────────────────────────────────
+-- FRESH SETUP (recommended):
+--   1. Run schema.sql  → drops and recreates all tables
+--   2. Run seed.sql    → populates with demo data
+--
+-- LIVE DATABASE SYNC (add missing columns without losing data):
+--   Run only the ALTER TABLE block at the BOTTOM of this file.
+--   Requires MySQL 8.0.30+ for ADD COLUMN IF NOT EXISTS support.
 -- ═══════════════════════════════════════════════════════════════════
 
 CREATE DATABASE IF NOT EXISTS softec_db;
@@ -705,3 +714,43 @@ BEGIN
 END//
 
 DELIMITER ;
+
+
+-- ═══════════════════════════════════════════════════════════════════
+-- LIVE DATABASE SYNC — Run this block ONLY if your live database is
+-- missing the sponsorships columns listed below.  Safe to run on
+-- MySQL 8.0.30+.  If your version is older, re-run the full
+-- schema.sql + seed.sql instead (fresh setup above).
+-- ═══════════════════════════════════════════════════════════════════
+SET @db = DATABASE();
+
+-- Add missing sponsorships columns (no-op if they already exist)
+ALTER TABLE sponsorships
+  ADD COLUMN IF NOT EXISTS approved_by      INT           NULL        AFTER status,
+  ADD COLUMN IF NOT EXISTS approved_at      TIMESTAMP     NULL        AFTER approved_by,
+  ADD COLUMN IF NOT EXISTS rejection_reason VARCHAR(500)  NULL        AFTER approved_at,
+  ADD COLUMN IF NOT EXISTS admin_notes      TEXT          NULL        AFTER rejection_reason,
+  ADD COLUMN IF NOT EXISTS created_at       TIMESTAMP     NOT NULL
+                                            DEFAULT CURRENT_TIMESTAMP AFTER admin_notes;
+
+-- Add FK on approved_by if it doesn't exist yet
+SET @fk_exists = (
+  SELECT COUNT(*)
+  FROM   information_schema.TABLE_CONSTRAINTS
+  WHERE  CONSTRAINT_SCHEMA = @db
+    AND  TABLE_NAME         = 'sponsorships'
+    AND  CONSTRAINT_NAME    = 'fk_sponsorships_approved_by'
+    AND  CONSTRAINT_TYPE    = 'FOREIGN KEY'
+);
+SET @add_fk = IF(@fk_exists = 0,
+  'ALTER TABLE sponsorships ADD CONSTRAINT fk_sponsorships_approved_by FOREIGN KEY (approved_by) REFERENCES users(user_id) ON DELETE SET NULL ON UPDATE CASCADE',
+  'SELECT 1 -- FK already exists'
+);
+PREPARE stmt FROM @add_fk;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Ensure the sponsorship status ENUM does NOT include legacy 'approved'
+-- (MySQL does not support removing ENUM values with IF-guards; run this
+-- only once — it is already correct in a fresh schema.sql run.)
+-- ALTER TABLE sponsorships MODIFY COLUMN status ENUM('pending','confirmed','rejected','cancelled') NOT NULL DEFAULT 'pending';

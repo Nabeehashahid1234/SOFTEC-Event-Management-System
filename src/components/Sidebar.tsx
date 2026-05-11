@@ -30,6 +30,7 @@ const NAV: Record<string, { to: string; label: string; icon: any }[]> = {
   ],
   judge: [
     { to: "/app/dashboard", label: "Adjudication", icon: LayoutDashboard },
+    { to: "/app/events", label: "My Events", icon: Calendar },
     { to: "/app/judging", label: "Score", icon: Award },
     { to: "/app/leaderboards", label: "Leaderboards", icon: Trophy },
   ],
