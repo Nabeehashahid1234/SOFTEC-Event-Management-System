@@ -1,11 +1,12 @@
 const express = require("express");
+const crypto = require("crypto");
 const { param, validationResult } = require("express-validator");
 const pool = require("../config/db");
 const { authRequired } = require("../middleware/auth");
 const { requireRole } = require("../middleware/rbac");
 
 const router = express.Router();
-
+// hey new commit
 router.get("/events/:id/my-registration", authRequired, [param("id").isInt()], async (req, res, next) => {
   try {
     const errors = validationResult(req);
@@ -72,7 +73,9 @@ router.post("/events/:id/register", authRequired, [param("id").isInt()], async (
       return res.status(404).json({ success: false, error: "Event not found" });
     }
 
-    if (Number(event.registered_participants || 0) >= Number(event.max_participants || 0)) {
+    // NULL or 0 max_participants means unlimited capacity — only block when an explicit cap is set
+    const cap = event.max_participants != null ? Number(event.max_participants) : null;
+    if (cap !== null && cap > 0 && Number(event.registered_participants || 0) >= cap) {
       await conn.rollback();
       return res.status(409).json({ success: false, error: "Event is full" });
     }
@@ -97,6 +100,17 @@ router.post("/events/:id/register", authRequired, [param("id").isInt()], async (
     );
 
     await conn.query("UPDATE events SET registered_participants = registered_participants + 1 WHERE event_id = ?", [eventId]);
+
+    // For free events, the payment is already 'completed' on insert so the AFTER UPDATE
+    // trigger won't fire. Generate the pass here explicitly.
+    if (fee === 0) {
+      const participantId = participantResult.insertId;
+      const passId = typeof crypto.randomUUID === "function" ? crypto.randomUUID() : crypto.createHash("sha1").update(String(participantId) + Date.now()).digest("hex");
+      await conn.query(
+        "INSERT IGNORE INTO passes (pass_id, participant_id, event_id, qr_code) VALUES (?, ?, ?, ?)",
+        [passId, participantId, eventId, `SOFTEC-${eventId}-${participantId}`]
+      );
+    }
 
     await conn.commit();
 
