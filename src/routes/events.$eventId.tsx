@@ -186,9 +186,12 @@ function RegisterButton({ user, event, regData, regLoading, register, unregister
     );
   }
 
-  const isRegistered = regData?.registered;
-  const registration = regData?.registration;
-  const isPending = registration&& registration.payment_status === "pending" && Number(event.fee) > 0;
+  const isRegistered = Boolean(regData?.registered);
+  const registration = regData?.registration ?? null;
+  const isPending =
+    registration &&
+    registration.payment_status === "pending" &&
+    Number(event.fee || 0) > 0;
 
   const handleRegister = async () => {
     try {
@@ -250,9 +253,12 @@ function RegisterButton({ user, event, regData, regLoading, register, unregister
     );
   }
 
-  const isFull = event.capacity > 0 && event.registered >= event.capacity;
+  const cap = Number(event.capacity || 0);
+  const isFull =
+    cap > 0 &&
+    Number(event.registered || 0) >= cap;
 
-  if (showRegistrationForm && !isFull) {
+  if (Boolean(showRegistrationForm) && !Boolean(isFull)) {
     return (
       <div className="space-y-4 rounded-xl border border-border bg-card p-5">
         <div>
@@ -266,7 +272,7 @@ function RegisterButton({ user, event, regData, regLoading, register, unregister
           </div>
           <div className="flex justify-between text-muted-foreground">
             <span>Capacity</span>
-            <span>{event.registered}/{event.capacity}</span>
+            <span>{event.registered}/{event.capacity || "∞"}</span>
           </div>
         </div>
         <div className="grid gap-3">
@@ -282,7 +288,14 @@ function RegisterButton({ user, event, regData, regLoading, register, unregister
   }
 
   return (
-    <button onClick={() => setShowRegistrationForm(true)} disabled={register.isPending || isFull} className="block w-full text-center bg-primary text-primary-foreground py-3 rounded-md text-sm font-medium hover:bg-primary-dark transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
+    <button
+      onClick={() => {
+        console.log("REGISTER BUTTON CLICKED");
+        setShowRegistrationForm(true);
+      }}
+      disabled={register.isPending || isFull}
+      className="block w-full text-center bg-primary text-primary-foreground py-3 rounded-md text-sm font-medium hover:bg-primary-dark transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+    >
       {register.isPending ? "Registering…" : isFull ? "Event full" : "Register for this programme"}
     </button>
   );
