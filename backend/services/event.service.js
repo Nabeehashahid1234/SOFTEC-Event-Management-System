@@ -4,7 +4,7 @@ const pool = require("../config/db");
 function generateReference(prefix = "REG") {
   return `${prefix}-${Date.now()}-${crypto.randomBytes(4).toString("hex")}`;
 }
-
+// comment
 function generateToken() {
   return crypto.randomBytes(20).toString("hex");
 }
