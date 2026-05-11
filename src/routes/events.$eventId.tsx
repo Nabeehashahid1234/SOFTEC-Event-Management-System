@@ -188,7 +188,7 @@ function RegisterButton({ user, event, regData, regLoading, register, unregister
 
   const isRegistered = regData?.registered;
   const registration = regData?.registration;
-  const isPending = registration?.payment_status === "pending" && event.fee > 0;
+  const isPending = registration&& registration.payment_status === "pending" && Number(event.fee) > 0;
 
   const handleRegister = async () => {
     try {
