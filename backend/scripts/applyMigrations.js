@@ -57,6 +57,7 @@ async function main() {
     console.log("");
   }
 
+  // this loop applies the SQL files in order, with special handling for schema.sql if tables already exist, and skips triggers.sql and procedures.sql with a warning about DELIMITER syntax. It also provides detailed logging and troubleshooting tips if any migration fails.
   try {
     for (const file of sqlFiles) {
       const filePath = path.join(databaseDir, file.name);
