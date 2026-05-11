@@ -33,9 +33,27 @@ function EventDetail() {
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
   const event = data?.event;
   const [, force] = useState(0);
-  useEffect(() => { const id = setInterval(() => force(n => n + 1), 60000); return () => clearInterval(id); }, []);
+
+  useEffect(() => {
+    console.log("[EventDetail] RENDER", {
+      eventId,
+      user: user?.role,
+      isLoading,
+      isError,
+      eventExists: !!event,
+      showRegistrationForm,
+      regData: regData ? { registered: regData.registered } : null,
+    });
+  }, [eventId, user, isLoading, isError, event, showRegistrationForm, regData]);
+
+  useEffect(() => {
+    const id = setInterval(() => force(n => n + 1), 60000);
+    return () => clearInterval(id);
+  }, []);
+
   if (isLoading) return <div className="min-h-screen grid place-items-center"><p className="text-sm text-muted-foreground">Loading programme...</p></div>;
   if (isError || !event) return <div className="min-h-screen grid place-items-center"><p className="text-sm text-rose">Programme not found.</p></div>;
+
   const ct = countdown(event.date);
   const board = (data?.leaderboard ?? []).map((row, index) => ({
     rank: row.rank ?? index + 1,
@@ -166,7 +184,21 @@ function EventDetail() {
 }
 
 function RegisterButton({ user, event, regData, regLoading, register, unregister, confirmPayment, eventId, showRegistrationForm, setShowRegistrationForm }: any) {
+  useEffect(() => {
+    console.log("[RegisterButton] RENDER", {
+      userRole: user?.role,
+      showRegistrationForm,
+      regLoading,
+      isRegistered: Boolean(regData?.registered),
+      isPending: regData?.registration?.payment_status === "pending",
+      eventCapacity: event.capacity,
+      eventRegistered: event.registered,
+      eventFee: event.fee,
+    });
+  }, [user, showRegistrationForm, regLoading, regData, event]);
+
   if (!user) {
+    console.log("[RegisterButton] NO USER - showing login link");
     return (
       <Link to="/login" className="block w-full text-center bg-primary text-primary-foreground py-3 rounded-md text-sm font-medium hover:bg-primary-dark transition-colors">
         Log in to register
@@ -175,10 +207,12 @@ function RegisterButton({ user, event, regData, regLoading, register, unregister
   }
 
   if (user.role !== "participant") {
+    console.log("[RegisterButton] NOT PARTICIPANT ROLE:", user.role);
     return <p className="text-center text-xs text-muted-foreground py-2">Only participants can register for events.</p>;
   }
 
   if (regLoading) {
+    console.log("[RegisterButton] REG LOADING");
     return (
       <div className="flex justify-center py-3">
         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -193,7 +227,14 @@ function RegisterButton({ user, event, regData, regLoading, register, unregister
     registration.payment_status === "pending" &&
     Number(event.fee || 0) > 0;
 
+  console.log("[RegisterButton] STATE CHECK", {
+    isRegistered,
+    isPending,
+    hasRegistration: !!registration,
+  });
+
   const handleRegister = async () => {
+    console.log("[RegisterButton] REGISTER CLICKED");
     try {
       await register.mutateAsync(eventId);
       setShowRegistrationForm(false);
@@ -225,6 +266,7 @@ function RegisterButton({ user, event, regData, regLoading, register, unregister
   };
 
   if (isRegistered && isPending) {
+    console.log("[RegisterButton] RENDERING: PAYMENT PENDING");
     return (
       <div className="space-y-2">
         <div className="rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-3 text-center">
@@ -241,6 +283,7 @@ function RegisterButton({ user, event, regData, regLoading, register, unregister
   }
 
   if (isRegistered) {
+    console.log("[RegisterButton] RENDERING: ALREADY REGISTERED");
     return (
       <div className="space-y-2">
         <div className="rounded-md bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 p-3 text-center">
@@ -258,7 +301,20 @@ function RegisterButton({ user, event, regData, regLoading, register, unregister
     cap > 0 &&
     Number(event.registered || 0) >= cap;
 
+  console.log("[RegisterButton] CAPACITY CHECK", {
+    cap,
+    registered: Number(event.registered || 0),
+    isFull,
+  });
+
+  console.log("[RegisterButton] FORM CONDITION CHECK", {
+    showRegistrationForm: Boolean(showRegistrationForm),
+    isFull: Boolean(isFull),
+    shouldShowForm: Boolean(showRegistrationForm) && !Boolean(isFull),
+  });
+
   if (Boolean(showRegistrationForm) && !Boolean(isFull)) {
+    console.log("[RegisterButton] RENDERING: REGISTRATION FORM");
     return (
       <div className="space-y-4 rounded-xl border border-border bg-card p-5">
         <div>
@@ -279,7 +335,10 @@ function RegisterButton({ user, event, regData, regLoading, register, unregister
           <button onClick={handleRegister} disabled={register.isPending} className="block w-full text-center bg-primary text-primary-foreground py-3 rounded-md text-sm font-medium hover:bg-primary-dark transition-colors disabled:opacity-60">
             {register.isPending ? "Registering…" : "Confirm registration"}
           </button>
-          <button onClick={() => setShowRegistrationForm(false)} className="block w-full text-center py-3 rounded-md text-sm font-medium text-muted-foreground border border-border hover:text-foreground transition-colors">
+          <button onClick={() => {
+            console.log("[RegisterButton] CANCEL FORM CLICKED");
+            setShowRegistrationForm(false);
+          }} className="block w-full text-center py-3 rounded-md text-sm font-medium text-muted-foreground border border-border hover:text-foreground transition-colors">
             Cancel
           </button>
         </div>
@@ -287,11 +346,14 @@ function RegisterButton({ user, event, regData, regLoading, register, unregister
     );
   }
 
+  console.log("[RegisterButton] RENDERING: REGISTER BUTTON");
   return (
     <button
       onClick={() => {
-        console.log("REGISTER BUTTON CLICKED");
+        console.log("[RegisterButton] REGISTER BUTTON CLICKED");
+        console.log("[RegisterButton] BEFORE setShowRegistrationForm:", showRegistrationForm);
         setShowRegistrationForm(true);
+        console.log("[RegisterButton] AFTER setShowRegistrationForm - state update queued");
       }}
       disabled={register.isPending || isFull}
       className="block w-full text-center bg-primary text-primary-foreground py-3 rounded-md text-sm font-medium hover:bg-primary-dark transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
