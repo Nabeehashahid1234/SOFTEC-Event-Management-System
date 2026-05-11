@@ -22,7 +22,7 @@ function Teams() {
           Team formation for group events will be available here. Register for a team-based event on the event page to get started once this feature launches.
         </p>
         <Link
-          to="/events"
+          to="/app/events"
           className="mt-8 inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-medium"
         >
           Browse events →
