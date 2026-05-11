@@ -4,7 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const dotenv = require("dotenv");
 const mysql = require("mysql2/promise");
-
+// Load environment variables from .env file
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 // This script applies the SQL files in the correct order to set up the database schema, triggers, procedures, views, events, permissions, and seed data.
 async function main() {
