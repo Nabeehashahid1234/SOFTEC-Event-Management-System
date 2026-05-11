@@ -22,8 +22,7 @@ async function assignLeastBusyJudge(connection, eventId) {
 
   const [assignment] = await connection.query("INSERT IGNORE INTO event_judges (event_id, judge_id) VALUES (?, ?)", [eventId, judge.judge_id]);
   if (assignment.affectedRows > 0) {
-    // Note: If assigned_events_count column exists, update it; otherwise, rely on count
-    // For now, assuming we remove the column, so no update needed
+    await connection.query("UPDATE judges SET assigned_events_count = assigned_events_count + 1 WHERE judge_id = ?", [judge.judge_id]);
   }
   return judge.judge_id;
 }

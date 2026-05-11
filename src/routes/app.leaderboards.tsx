@@ -27,8 +27,8 @@ function LeaderboardPanel({ event }: { event: any }) {
   const leaderboardRows = rows.map((row, index) => ({
     rank: typeof row.rank === "number" ? row.rank : index + 1,
     participant_id: row.participant_id ?? index,
-    name: row.name || row.participant_name || "Participant",
-    score: typeof row.score === "number" ? row.score : Number(row.score ?? row.average_score ?? 0),
+    name: row.name || (row as any).participant_name || "Participant",
+    score: typeof row.score === "number" ? row.score : Number(row.score ?? (row as any).average_score ?? 0),
   }));
 
   return (

@@ -21,7 +21,7 @@ function Sponsors() {
       <div className="mt-8 grid md:grid-cols-2 gap-5">
         {sponsors.map((s) => (
           <div key={s.sponsor_id} className="rounded-lg border border-border bg-card p-6">
-            <Pill tone={s.sponsorship_level === "Title" ? "ember" : s.sponsorship_level === "Gold" ? "gold" : "muted"}>{s.sponsorship_level} patron</Pill>
+            <Pill tone={s.sponsorship_level === "Gold" ? "gold" : s.sponsorship_level === "Silver" ? "ember" : "muted"}>{s.sponsorship_level} patron</Pill>
             <h3 className="font-display text-2xl font-semibold mt-3">{s.company_name}</h3>
             <p className="text-sm text-muted-foreground mt-1">{s.email}</p>
           </div>

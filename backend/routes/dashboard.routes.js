@@ -76,7 +76,29 @@ router.get("/admin", authRequired, async (_req, res, next) => {
     );
     const [paymentStatus] = await pool.query("SELECT status, COUNT(*) AS count FROM payments GROUP BY status ORDER BY count DESC");
 
-    return res.json({ success: true, data: { kpi: { total_users, active_users, total_events, total_registrations, revenue_completed, pending_revenue }, roleDistribution, categoryDistribution, venueUtilization, topPrograms, revenueBreakdown, pendingSponsorships, sponsorshipHistory, recentActivity, paymentStatus } });
+    // Full event roster: every event with its assigned judges, participant count, sponsor count
+    const [allEvents] = await pool.query(
+      `
+      SELECT
+        e.event_id, e.event_name, e.category, e.event_date,
+        v.venue_name,
+        e.registered_participants, e.max_participants,
+        e.sponsorship_total, e.prize_pool,
+        GROUP_CONCAT(DISTINCT j.name ORDER BY j.name SEPARATOR ', ') AS assigned_judges,
+        COUNT(DISTINCT ej.judge_id)   AS judge_count,
+        COUNT(DISTINCT sp.sponsorship_id) AS sponsor_count
+      FROM events e
+      LEFT JOIN venues v ON v.venue_id = e.venue_id
+      LEFT JOIN event_judges ej ON ej.event_id = e.event_id
+      LEFT JOIN judges j ON j.judge_id = ej.judge_id
+      LEFT JOIN sponsorships sp ON sp.event_id = e.event_id AND sp.status = 'confirmed'
+      GROUP BY e.event_id, e.event_name, e.category, e.event_date, v.venue_name,
+               e.registered_participants, e.max_participants, e.sponsorship_total, e.prize_pool
+      ORDER BY e.event_date ASC
+      `
+    );
+
+    return res.json({ success: true, data: { kpi: { total_users, active_users, total_events, total_registrations, revenue_completed, pending_revenue }, roleDistribution, categoryDistribution, venueUtilization, topPrograms, revenueBreakdown, pendingSponsorships, sponsorshipHistory, recentActivity, paymentStatus, allEvents } });
   } catch (err) {
     return next(err);
   }

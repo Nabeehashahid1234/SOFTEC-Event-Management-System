@@ -119,7 +119,8 @@ router.post(
   }
 );
 
-router.patch("/:id/approve", authRequired, requireRole(["admin"]), [param("id").isInt(), body("admin_notes").optional().isString().trim().isLength({ max: 1000 })], async (req, res, next) => {
+// Shared handler: approve/confirm a sponsorship
+async function handleConfirmSponsorship(req, res, next) {
   let conn;
   try {
     const errors = validationResult(req);
@@ -140,13 +141,17 @@ router.patch("/:id/approve", authRequired, requireRole(["admin"]), [param("id").
       await conn.rollback();
       return res.status(404).json({ success: false, error: "Sponsorship not found" });
     }
-    if (sp.status === "approved") {
+    if (sp.status === "confirmed") {
       await conn.rollback();
-      return res.status(400).json({ success: false, error: "Sponsorship already approved" });
+      return res.status(400).json({ success: false, error: "Sponsorship already confirmed" });
+    }
+    if (sp.status !== "pending") {
+      await conn.rollback();
+      return res.status(400).json({ success: false, error: `Sponsorship is already ${sp.status}` });
     }
 
     await conn.query(
-      "UPDATE sponsorships SET status = 'approved', approved_by = ?, approved_at = CURRENT_TIMESTAMP, admin_notes = ? WHERE sponsorship_id = ?",
+      "UPDATE sponsorships SET status = 'confirmed', approved_by = ?, approved_at = CURRENT_TIMESTAMP, admin_notes = ? WHERE sponsorship_id = ?",
       [adminId, adminNotes, sponsorshipId]
     );
 
@@ -155,22 +160,22 @@ router.patch("/:id/approve", authRequired, requireRole(["admin"]), [param("id").
       [sp.user_id, sp.event_id]
     );
 
-    if (sp.event_id) {
-      await conn.query(
-        "UPDATE events SET sponsorship_total = sponsorship_total + ? WHERE event_id = ?",
-        [sp.amount || 0, sp.event_id]
-      );
-    }
-
+    // sync_sponsorship_total_on_update trigger handles events.sponsorship_total automatically
     await conn.commit();
-    return res.json({ success: true, data: { sponsorship_id: sponsorshipId, status: "approved" } });
+    return res.json({ success: true, data: { sponsorship_id: sponsorshipId, status: "confirmed" } });
   } catch (err) {
     if (conn) await conn.rollback();
     return next(err);
   } finally {
     if (conn) conn.release();
   }
-});
+}
+
+const confirmValidators = [param("id").isInt(), body("admin_notes").optional().isString().trim().isLength({ max: 1000 })];
+
+// Frontend calls /confirm; /approve kept as alias for backward compat
+router.patch("/:id/confirm", authRequired, requireRole(["admin"]), confirmValidators, handleConfirmSponsorship);
+router.patch("/:id/approve", authRequired, requireRole(["admin"]), confirmValidators, handleConfirmSponsorship);
 
 router.patch("/:id/reject", authRequired, requireRole(["admin"]),
   [param("id").isInt(), body("rejection_reason").optional().isString().trim().isLength({ max: 500 }), body("admin_notes").optional().isString().trim().isLength({ max: 1000 })],
