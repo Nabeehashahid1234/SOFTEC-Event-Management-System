@@ -52,7 +52,7 @@ app.get("/api/health", (_req, res) => {
     missingEnv,
   });
 });
-
+// hey
 app.use("/api/auth", require("./routes/auth.routes"));
 app.use("/api/users", require("./routes/users.routes"));
 app.use("/api/events", require("./routes/events.routes"));
