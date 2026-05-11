@@ -196,7 +196,8 @@ function RegisterButton({ user, event, regData, regLoading, register, unregister
       setShowRegistrationForm(false);
       toast.success(event.fee === 0 ? "Registered successfully!" : "Registered! Please complete payment.");
     } catch (err: any) {
-      toast.error(err?.response?.data?.error || "Registration failed");
+      console.error("[register] error:", err?.response?.data || err?.message || err);
+      toast.error(err?.response?.data?.error || err?.message || "Registration failed");
     }
   };
 
