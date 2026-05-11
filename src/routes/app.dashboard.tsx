@@ -751,6 +751,7 @@ function AdminDash({ data }: { data: any }) {
   const sponsorshipHistory = Array.isArray(data.sponsorshipHistory) ? data.sponsorshipHistory : [];
   const recentActivity   = Array.isArray(data.recentActivity)   ? data.recentActivity   : [];
   const paymentStatus    = Array.isArray(data.paymentStatus)    ? data.paymentStatus    : [];
+  const allEvents        = Array.isArray(data.allEvents)        ? data.allEvents        : [];
   const approveSponsorship = useApproveSponsorship();
   const rejectSponsorship = useRejectSponsorship();
   const [pendingList, setPendingList] = useState(pendingSponsorships);
@@ -804,7 +805,7 @@ function AdminDash({ data }: { data: any }) {
                       try {
                         await approveSponsorship.mutateAsync({ sponsorshipId: sp.sponsorship_id, adminNotes: window.prompt("Admin notes (optional)") || undefined });
                         setPendingList((prev: any[]) => prev.filter((item) => item.sponsorship_id !== sp.sponsorship_id));
-                        setHistoryList((prev: any[]) => [{ ...sp, status: "approved", approved_at: new Date().toISOString() }, ...prev]);
+                        setHistoryList((prev: any[]) => [{ ...sp, status: "confirmed", approved_at: new Date().toISOString() }, ...prev]);
                         toast.success("Sponsorship approved");
                       } catch (err: any) {
                         toast.error(err?.response?.data?.error || "Approval failed");
@@ -991,6 +992,39 @@ function AdminDash({ data }: { data: any }) {
           <p className="text-xs text-muted-foreground mt-3">
             Passes are auto-generated when a registration payment is confirmed. Passes for free events are issued immediately on registration.
           </p>
+        </Section>
+      )}
+
+      {/* All events with judge + sponsor + participant breakdown */}
+      {allEvents.length > 0 && (
+        <Section title="All Programmes — System View">
+          <div className="rounded-lg border border-border bg-card overflow-hidden">
+            <div className="grid grid-cols-12 px-4 py-2.5 bg-muted/40 border-b border-border font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+              <div className="col-span-4">Programme</div>
+              <div className="col-span-3">Judge(s)</div>
+              <div className="col-span-2 text-center">Participants</div>
+              <div className="col-span-1 text-center">Sponsors</div>
+              <div className="col-span-2 text-right">Date</div>
+            </div>
+            {allEvents.map((e: any) => (
+              <Link key={e.event_id} to="/events/$eventId" params={{ eventId: String(e.event_id) }} className="group grid grid-cols-12 px-4 py-3 border-b border-border last:border-0 items-center text-sm hover:bg-muted/30 transition-colors">
+                <div className="col-span-4 min-w-0">
+                  <p className="font-medium group-hover:text-primary transition-colors truncate">{e.event_name}</p>
+                  <p className="font-mono text-[10px] text-muted-foreground">{e.category?.replace(" Events","").replace(" Competitions","").replace(" Tournaments","")}</p>
+                </div>
+                <div className="col-span-3 min-w-0">
+                  <p className="text-xs text-muted-foreground truncate">{e.assigned_judges || <span className="text-rose-400">Unassigned</span>}</p>
+                </div>
+                <div className="col-span-2 text-center">
+                  <span className="font-mono text-xs tabular">{e.registered_participants || 0}/{e.max_participants}</span>
+                </div>
+                <div className="col-span-1 text-center">
+                  <span className="font-mono text-xs tabular">{e.sponsor_count || 0}</span>
+                </div>
+                <div className="col-span-2 text-right font-mono text-[11px] text-muted-foreground tabular">{fmtDate(e.event_date)}</div>
+              </Link>
+            ))}
+          </div>
         </Section>
       )}
 

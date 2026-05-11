@@ -111,7 +111,7 @@ function Sponsorship() {
           <div key={sp.sponsorship_id} className="rounded-lg border border-border bg-card p-6 space-y-3">
             <div className="flex items-start justify-between">
               <Pill tone="muted">{sp.sponsorship_type}</Pill>
-              <span className={`font-mono text-[10px] uppercase tracking-wider ${sp.status === "approved" ? "text-green-500" : sp.status === "rejected" ? "text-rose-400" : sp.status === "pending" ? "text-amber-500" : "text-muted-foreground"}`}>
+              <span className={`font-mono text-[10px] uppercase tracking-wider ${sp.status === "confirmed" ? "text-green-500" : sp.status === "rejected" ? "text-rose-400" : sp.status === "pending" ? "text-amber-500" : "text-muted-foreground"}`}>
                 {sp.status}
               </span>
             </div>
