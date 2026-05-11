@@ -333,7 +333,7 @@ CREATE TABLE notifications (
   INDEX idx_notifications_type (type)
 ) ENGINE=InnoDB;
 
-CREATE TABLE passes (
+CREATE TABLE IF NOT EXISTS passes (
   pass_id VARCHAR(36) PRIMARY KEY,
   participant_id INT NOT NULL,
   event_id INT NOT NULL,

@@ -27,7 +27,9 @@ import { Route as AppLeaderboardsRouteImport } from './routes/app.leaderboards'
 import { Route as AppJudgingRouteImport } from './routes/app.judging'
 import { Route as AppEventsRouteImport } from './routes/app.events'
 import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
+import { Route as AppAdminRouteImport } from './routes/app.admin'
 import { Route as AppAccommodationRouteImport } from './routes/app.accommodation'
+import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
 import { Route as AppEventsNewRouteImport } from './routes/app.events.new'
 
 const SponsorsRoute = SponsorsRouteImport.update({
@@ -120,10 +122,20 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAccommodationRoute = AppAccommodationRouteImport.update({
   id: '/accommodation',
   path: '/accommodation',
   getParentRoute: () => AppRoute,
+} as any)
+const AdminDashboardRoute = AdminDashboardRouteImport.update({
+  id: '/admin/dashboard',
+  path: '/admin/dashboard',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AppEventsNewRoute = AppEventsNewRouteImport.update({
   id: '/new',
@@ -139,7 +151,9 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/sponsors': typeof SponsorsRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
   '/app/accommodation': typeof AppAccommodationRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/events': typeof AppEventsRouteWithChildren
   '/app/judging': typeof AppJudgingRoute
@@ -160,7 +174,9 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/sponsors': typeof SponsorsRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
   '/app/accommodation': typeof AppAccommodationRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/events': typeof AppEventsRouteWithChildren
   '/app/judging': typeof AppJudgingRoute
@@ -183,7 +199,9 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/sponsors': typeof SponsorsRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
   '/app/accommodation': typeof AppAccommodationRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/events': typeof AppEventsRouteWithChildren
   '/app/judging': typeof AppJudgingRoute
@@ -207,7 +225,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/sponsors'
+    | '/admin/dashboard'
     | '/app/accommodation'
+    | '/app/admin'
     | '/app/dashboard'
     | '/app/events'
     | '/app/judging'
@@ -228,7 +248,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/sponsors'
+    | '/admin/dashboard'
     | '/app/accommodation'
+    | '/app/admin'
     | '/app/dashboard'
     | '/app/events'
     | '/app/judging'
@@ -250,7 +272,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/sponsors'
+    | '/admin/dashboard'
     | '/app/accommodation'
+    | '/app/admin'
     | '/app/dashboard'
     | '/app/events'
     | '/app/judging'
@@ -273,6 +297,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
   SponsorsRoute: typeof SponsorsRoute
+  AdminDashboardRoute: typeof AdminDashboardRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -403,12 +428,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/admin': {
+      id: '/app/admin'
+      path: '/admin'
+      fullPath: '/app/admin'
+      preLoaderRoute: typeof AppAdminRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/accommodation': {
       id: '/app/accommodation'
       path: '/accommodation'
       fullPath: '/app/accommodation'
       preLoaderRoute: typeof AppAccommodationRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/admin/dashboard': {
+      id: '/admin/dashboard'
+      path: '/admin/dashboard'
+      fullPath: '/admin/dashboard'
+      preLoaderRoute: typeof AdminDashboardRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/app/events/new': {
       id: '/app/events/new'
@@ -434,6 +473,7 @@ const AppEventsRouteWithChildren = AppEventsRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppAccommodationRoute: typeof AppAccommodationRoute
+  AppAdminRoute: typeof AppAdminRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppEventsRoute: typeof AppEventsRouteWithChildren
   AppJudgingRoute: typeof AppJudgingRoute
@@ -448,6 +488,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAccommodationRoute: AppAccommodationRoute,
+  AppAdminRoute: AppAdminRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppEventsRoute: AppEventsRouteWithChildren,
   AppJudgingRoute: AppJudgingRoute,
@@ -481,6 +522,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
   SponsorsRoute: SponsorsRoute,
+  AdminDashboardRoute: AdminDashboardRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

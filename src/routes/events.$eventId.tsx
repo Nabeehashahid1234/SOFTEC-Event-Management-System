@@ -30,13 +30,19 @@ function EventDetail() {
   const register = useRegisterEvent();
   const unregister = useUnregisterEvent();
   const confirmPayment = useConfirmPayment();
+  const [showRegistrationForm, setShowRegistrationForm] = useState(false);
   const event = data?.event;
   const [, force] = useState(0);
   useEffect(() => { const id = setInterval(() => force(n => n + 1), 60000); return () => clearInterval(id); }, []);
   if (isLoading) return <div className="min-h-screen grid place-items-center"><p className="text-sm text-muted-foreground">Loading programme...</p></div>;
   if (isError || !event) return <div className="min-h-screen grid place-items-center"><p className="text-sm text-rose">Programme not found.</p></div>;
   const ct = countdown(event.date);
-  const board = data?.leaderboard ?? [];
+  const board = (data?.leaderboard ?? []).map((row, index) => ({
+    rank: row.rank ?? index + 1,
+    name: row.name ?? "Participant",
+    avg_score: row.avg_score ?? 0,
+    participant_id: row.participant_id,
+  }));
 
   return (
     <div className="min-h-screen bg-background">
@@ -145,6 +151,8 @@ function EventDetail() {
               unregister={unregister}
               confirmPayment={confirmPayment}
               eventId={eventId}
+              showRegistrationForm={showRegistrationForm}
+              setShowRegistrationForm={setShowRegistrationForm}
             />
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <button className="hover:text-primary transition-colors">+ Add to calendar</button>
@@ -157,7 +165,7 @@ function EventDetail() {
   );
 }
 
-function RegisterButton({ user, event, regData, regLoading, register, unregister, confirmPayment, eventId }: any) {
+function RegisterButton({ user, event, regData, regLoading, register, unregister, confirmPayment, eventId, showRegistrationForm, setShowRegistrationForm }: any) {
   if (!user) {
     return (
       <Link to="/login" className="block w-full text-center bg-primary text-primary-foreground py-3 rounded-md text-sm font-medium hover:bg-primary-dark transition-colors">
@@ -185,6 +193,7 @@ function RegisterButton({ user, event, regData, regLoading, register, unregister
   const handleRegister = async () => {
     try {
       await register.mutateAsync(eventId);
+      setShowRegistrationForm(false);
       toast.success(event.fee === 0 ? "Registered successfully!" : "Registered! Please complete payment.");
     } catch (err: any) {
       toast.error(err?.response?.data?.error || "Registration failed");
@@ -242,8 +251,37 @@ function RegisterButton({ user, event, regData, regLoading, register, unregister
 
   const isFull = event.registered >= event.capacity;
 
+  if (showRegistrationForm && !isFull) {
+    return (
+      <div className="space-y-4 rounded-xl border border-border bg-card p-5">
+        <div>
+          <p className="text-sm font-medium">Confirm your registration</p>
+          <p className="text-xs text-muted-foreground mt-1">You are about to register for {event.name}.</p>
+        </div>
+        <div className="grid gap-2 text-sm text-foreground">
+          <div className="flex justify-between text-muted-foreground">
+            <span>Fee</span>
+            <span>{event.fee === 0 ? "Free" : fmtPKR(event.fee)}</span>
+          </div>
+          <div className="flex justify-between text-muted-foreground">
+            <span>Capacity</span>
+            <span>{event.registered}/{event.capacity}</span>
+          </div>
+        </div>
+        <div className="grid gap-3">
+          <button onClick={handleRegister} disabled={register.isPending} className="block w-full text-center bg-primary text-primary-foreground py-3 rounded-md text-sm font-medium hover:bg-primary-dark transition-colors disabled:opacity-60">
+            {register.isPending ? "Registering…" : "Confirm registration"}
+          </button>
+          <button onClick={() => setShowRegistrationForm(false)} className="block w-full text-center py-3 rounded-md text-sm font-medium text-muted-foreground border border-border hover:text-foreground transition-colors">
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <button onClick={handleRegister} disabled={register.isPending || isFull} className="block w-full text-center bg-primary text-primary-foreground py-3 rounded-md text-sm font-medium hover:bg-primary-dark transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
+    <button onClick={() => setShowRegistrationForm(true)} disabled={register.isPending || isFull} className="block w-full text-center bg-primary text-primary-foreground py-3 rounded-md text-sm font-medium hover:bg-primary-dark transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
       {register.isPending ? "Registering…" : isFull ? "Event full" : "Register for this programme"}
     </button>
   );

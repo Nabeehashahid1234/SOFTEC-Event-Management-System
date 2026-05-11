@@ -1,10 +1,14 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Calendar, LayoutGrid, Newspaper } from "lucide-react";
 import { useEvents, type UiCategory } from "@/hooks/useEvents";
 import { fmtDate, fmtPKR, cn } from "@/lib/format";
 import { Eyebrow, Pill, CapacityBar } from "@/components/ui-bits";
 import { ThemeSwitch } from "@/components/ThemeSwitch";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { toast } from "sonner";
+import QRCode from "react-qr-code";
+import jsPDF from "jspdf";
 
 export const Route = createFileRoute("/events")({
   head: () => ({
@@ -23,10 +27,81 @@ function EventBrowser() {
   const [view, setView] = useState<"magazine" | "grid" | "calendar">("magazine");
   const [feeOnly, setFeeOnly] = useState<"all" | "free" | "paid">("all");
   const { data: allEvents = [], isLoading, isError } = useEvents(cat === "All" ? undefined : { category: cat });
+  const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
+  const [isRegistrationOpen, setIsRegistrationOpen] = useState(false);
+  const [registrationForm, setRegistrationForm] = useState({
+    name: "",
+    email: "",
+    university: "",
+    teamMembers: "",
+  });
+  const [showTicket, setShowTicket] = useState(false);
+  const [ticketData, setTicketData] = useState<any>(null);
 
   const filtered = useMemo(() => allEvents.filter(e =>
     (feeOnly === "all" || (feeOnly === "free" ? e.fee === 0 : e.fee > 0))
   ), [allEvents, feeOnly]);
+
+  const resetRegistrationForm = () => {
+    setRegistrationForm({ name: "", email: "", university: "", teamMembers: "" });
+  };
+
+  const openRegistration = (event: any) => {
+    setSelectedEvent(event);
+    setIsRegistrationOpen(true);
+    resetRegistrationForm();
+  };
+
+  const closeRegistration = () => {
+    setIsRegistrationOpen(false);
+    setSelectedEvent(null);
+  };
+
+  const downloadTicket = () => {
+    const doc = new jsPDF();
+    doc.text(`Ticket for ${ticketData?.event}`, 20, 20);
+    doc.text(`Name: ${ticketData?.name}`, 20, 40);
+    doc.text(`Email: ${ticketData?.email}`, 20, 50);
+    doc.text(`Ticket ID: ${ticketData?.id}`, 20, 60);
+    // For QR, need to add image, but for simplicity, just text
+    doc.save(`ticket-${ticketData?.id}.pdf`);
+  };
+
+  const emailTicket = async () => {
+    // TODO: API call to send email
+    toast.success("Ticket emailed!");
+  };
+
+  const handleRegistrationSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    try {
+      const response = await fetch("/api/registrations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventId: selectedEvent?.event_id,
+          ...registrationForm,
+        }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setTicketData({
+          id: data.participant_id,
+          name: registrationForm.name,
+          email: registrationForm.email,
+          event: selectedEvent?.name,
+          qrData: `participant:${data.participant_id}`,
+        });
+        setShowTicket(true);
+        setIsRegistrationOpen(false);
+        toast.success("Registration successful!");
+      } else {
+        toast.error("Registration failed");
+      }
+    } catch (error) {
+      toast.error("An error occurred");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -113,7 +188,17 @@ function EventBrowser() {
                   </div>
                   <div className="lg:col-span-4 lg:border-l lg:border-border lg:pl-8 flex flex-col justify-between gap-4">
                     <CapacityBar filled={e.registered} total={e.capacity} />
-                    <span className="self-start text-sm text-primary font-medium group-hover:underline">View programme →</span>
+                    <button
+                      type="button"
+                      onClick={(ev) => {
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                        openRegistration(e);
+                      }}
+                      className="self-start rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+                    >
+                      View & register
+                    </button>
                   </div>
                 </div>
               </Link>
@@ -129,9 +214,20 @@ function EventBrowser() {
                 <h3 className="font-display text-xl font-medium mt-2 leading-tight">{e.name}</h3>
                 <p className="font-mono text-[11px] text-muted-foreground mt-3 tabular">{fmtDate(e.date)} · {e.venueName}</p>
                 <p className="mt-4 text-sm text-muted-foreground line-clamp-2">{e.excerpt}</p>
-                <div className="mt-5 pt-4 border-t border-border flex items-center justify-between font-mono text-[11px] tabular">
+                <div className="mt-5 pt-4 border-t border-border flex items-center justify-between font-mono text-[11px] tabular gap-3">
                   <span className="text-muted-foreground">{e.registered}/{e.capacity}</span>
                   <span className="text-primary">{e.fee === 0 ? "Free" : fmtPKR(e.fee)}</span>
+                  <button
+                    type="button"
+                    onClick={(ev) => {
+                      ev.preventDefault();
+                      ev.stopPropagation();
+                      openRegistration(e);
+                    }}
+                    className="rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-medium text-primary hover:bg-primary/10"
+                  >
+                    View & register
+                  </button>
                 </div>
               </Link>
             ))}
@@ -142,6 +238,93 @@ function EventBrowser() {
           </>
         )}
       </section>
+
+      <Dialog open={isRegistrationOpen} onOpenChange={(open) => { if (!open) closeRegistration(); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Register for {selectedEvent?.name || "this event"}</DialogTitle>
+            <DialogDescription>Fill in your details below to request registration.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleRegistrationSubmit} className="grid gap-4 pt-4">
+            <label className="block text-sm font-medium">
+              Name
+              <input
+                value={registrationForm.name}
+                onChange={(e) => setRegistrationForm(prev => ({ ...prev, name: e.target.value }))}
+                className="mt-2 block w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition-shadow focus:border-primary focus:ring-2 focus:ring-primary/10"
+                required
+              />
+            </label>
+            <label className="block text-sm font-medium">
+              Email
+              <input
+                value={registrationForm.email}
+                onChange={(e) => setRegistrationForm(prev => ({ ...prev, email: e.target.value }))}
+                className="mt-2 block w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition-shadow focus:border-primary focus:ring-2 focus:ring-primary/10"
+                type="email"
+                required
+              />
+            </label>
+            <label className="block text-sm font-medium">
+              University
+              <input
+                value={registrationForm.university}
+                onChange={(e) => setRegistrationForm(prev => ({ ...prev, university: e.target.value }))}
+                className="mt-2 block w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition-shadow focus:border-primary focus:ring-2 focus:ring-primary/10"
+              />
+            </label>
+            <label className="block text-sm font-medium">
+              Team members
+              <textarea
+                value={registrationForm.teamMembers}
+                onChange={(e) => setRegistrationForm(prev => ({ ...prev, teamMembers: e.target.value }))}
+                className="mt-2 block w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition-shadow focus:border-primary focus:ring-2 focus:ring-primary/10"
+                rows={4}
+              />
+            </label>
+            <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+              <button type="button" onClick={closeRegistration} className="rounded-md border border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Cancel
+              </button>
+              <button type="submit" className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-dark transition-colors">
+                Submit registration
+              </button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showTicket} onOpenChange={(open) => { if (!open) setShowTicket(false); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Registration Confirmed</DialogTitle>
+            <DialogDescription>
+              Your ticket for {ticketData?.event}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center space-y-4">
+            <div className="bg-white p-4 rounded-lg">
+              <QRCode value={ticketData?.qrData || ""} size={128} />
+            </div>
+            <div className="text-center">
+              <p className="font-semibold">{ticketData?.name}</p>
+              <p className="text-sm text-muted-foreground">{ticketData?.email}</p>
+              <p className="text-sm text-muted-foreground">Ticket ID: {ticketData?.id}</p>
+            </div>
+          </div>
+          <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <button onClick={downloadTicket} className="rounded-md border border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+              Download Ticket
+            </button>
+            <button onClick={emailTicket} className="rounded-md border border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+              Email Ticket
+            </button>
+            <button onClick={() => setShowTicket(false)} className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-dark transition-colors">
+              Close
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

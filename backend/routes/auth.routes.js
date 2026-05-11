@@ -13,7 +13,7 @@ router.post(
     body("name").isString().trim().isLength({ min: 2, max: 120 }),
     body("email").isEmail().normalizeEmail(),
     body("password").isString().isLength({ min: 6, max: 72 }),
-    body("role").isIn(["participant", "organizer", "judge", "sponsor"]),
+    body("role").isIn(["participant", "organizer", "judge", "sponsor", "admin"]),
   ],
   async (req, res, next) => {
     try {

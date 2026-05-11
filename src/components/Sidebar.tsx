@@ -8,6 +8,7 @@ import { cn } from "@/lib/format";
 
 const NAV: Record<string, { to: string; label: string; icon: any }[]> = {
   admin: [
+    { to: "/app/admin", label: "Admin Panel", icon: BarChart2 },
     { to: "/app/dashboard", label: "Almanac", icon: LayoutDashboard },
     { to: "/app/users", label: "Members", icon: Users },
     { to: "/app/events", label: "Programmes", icon: Calendar },
@@ -21,6 +22,7 @@ const NAV: Record<string, { to: string; label: string; icon: any }[]> = {
     { to: "/app/teams", label: "Teams", icon: Users },
   ],
   organizer: [
+    { to: "/app/admin", label: "Admin Panel", icon: BarChart2 },
     { to: "/app/dashboard", label: "Editor's Desk", icon: LayoutDashboard },
     { to: "/app/events", label: "My Events", icon: Calendar },
     { to: "/app/events/new", label: "Create", icon: Sparkles },

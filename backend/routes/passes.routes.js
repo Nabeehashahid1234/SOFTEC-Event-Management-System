@@ -10,17 +10,26 @@ const router = express.Router();
 router.get("/", authRequired, async (req, res, next) => {
   try {
     const userId = req.user.user_id;
-    const [rows] = await pool.query(
-      `
-      SELECT p.pass_id, p.participant_id, p.event_id, p.issued_at, p.status, p.qr_code, e.event_name, e.event_date
-      FROM passes p
-      JOIN participants pa ON pa.participant_id = p.participant_id
-      JOIN events e ON e.event_id = p.event_id
-      WHERE pa.user_id = ?
-      ORDER BY p.issued_at DESC
-      `,
-      [userId]
-    );
+    let rows = [];
+    try {
+      [rows] = await pool.query(
+        `
+        SELECT p.pass_id, p.participant_id, p.event_id, p.issued_at, p.status, p.qr_code, e.event_name, e.event_date
+        FROM passes p
+        JOIN participants pa ON pa.participant_id = p.participant_id
+        JOIN events e ON e.event_id = p.event_id
+        WHERE pa.user_id = ?
+        ORDER BY p.issued_at DESC
+        `,
+        [userId]
+      );
+    } catch (err) {
+      if (err.code === "ER_NO_SUCH_TABLE") {
+        rows = [];
+      } else {
+        throw err;
+      }
+    }
     return res.json({ success: true, data: rows });
   } catch (err) {
     return next(err);

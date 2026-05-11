@@ -82,6 +82,26 @@ router.get("/admin", authRequired, async (_req, res, next) => {
   }
 });
 
+router.put("/admin/sponsors/:id/approve", authRequired, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    await pool.query("UPDATE sponsorships SET status = 'approved' WHERE sponsorship_id = ?", [id]);
+    res.json({ success: true });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+router.put("/admin/sponsors/:id/reject", authRequired, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    await pool.query("UPDATE sponsorships SET status = 'rejected' WHERE sponsorship_id = ?", [id]);
+    res.json({ success: true });
+  } catch (err) {
+    return next(err);
+  }
+});
+
 router.get("/participant", authRequired, async (req, res, next) => {
   try {
     const userId = req.user.user_id;
@@ -133,10 +153,20 @@ router.get("/participant", authRequired, async (req, res, next) => {
       [userId]
     );
 
-    const [passes] = await pool.query(
-      `SELECT p.pass_id, p.event_id, p.issued_at, p.status, p.qr_code, e.event_name FROM passes p JOIN participants pa ON pa.participant_id = p.participant_id JOIN events e ON e.event_id = p.event_id WHERE pa.user_id = ? ORDER BY p.issued_at DESC`,
-      [userId]
-    );
+    let passes = [];
+    try {
+      const [rows] = await pool.query(
+        `SELECT p.pass_id, p.event_id, p.issued_at, p.status, p.qr_code, e.event_name FROM passes p JOIN participants pa ON pa.participant_id = p.participant_id JOIN events e ON e.event_id = p.event_id WHERE pa.user_id = ? ORDER BY p.issued_at DESC`,
+        [userId]
+      );
+      passes = rows;
+    } catch (err) {
+      if (err.code === "ER_NO_SUCH_TABLE") {
+        passes = [];
+      } else {
+        throw err;
+      }
+    }
 
     const [[{ registered_count }]] = await pool.query("SELECT COUNT(*) AS registered_count FROM participants WHERE user_id = ?", [userId]);
     const [[{ paid_count }]] = await pool.query("SELECT COUNT(*) AS paid_count FROM payments WHERE user_id = ? AND status = 'completed'", [userId]);

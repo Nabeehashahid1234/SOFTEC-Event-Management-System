@@ -9,11 +9,11 @@ const router = express.Router();
 async function assignLeastBusyJudge(connection, eventId) {
   const [[judge]] = await connection.query(
     `
-    SELECT j.judge_id
+    SELECT j.judge_id, COUNT(ej.event_judge_id) AS assigned_count
     FROM judges j
     LEFT JOIN event_judges ej ON ej.judge_id = j.judge_id
-    GROUP BY j.judge_id, j.assigned_events_count
-    ORDER BY j.assigned_events_count ASC, COUNT(ej.event_judge_id) ASC, j.judge_id ASC
+    GROUP BY j.judge_id
+    ORDER BY COUNT(ej.event_judge_id) ASC, j.judge_id ASC
     LIMIT 1
     `
   );
@@ -22,7 +22,8 @@ async function assignLeastBusyJudge(connection, eventId) {
 
   const [assignment] = await connection.query("INSERT IGNORE INTO event_judges (event_id, judge_id) VALUES (?, ?)", [eventId, judge.judge_id]);
   if (assignment.affectedRows > 0) {
-    await connection.query("UPDATE judges SET assigned_events_count = assigned_events_count + 1 WHERE judge_id = ?", [judge.judge_id]);
+    // Note: If assigned_events_count column exists, update it; otherwise, rely on count
+    // For now, assuming we remove the column, so no update needed
   }
   return judge.judge_id;
 }
@@ -104,7 +105,7 @@ router.get("/:id", [param("id").isInt()], async (req, res, next) => {
     if (!events.length) return res.status(404).json({ success: false, error: "Event not found" });
 
     const [rounds] = await pool.query("SELECT * FROM event_rounds WHERE event_id = ? ORDER BY round_date ASC", [eventId]);
-    const [leaderboard] = await pool.query(
+    const [leaderboardRows] = await pool.query(
       `
       SELECT
         p.participant_id,
@@ -120,6 +121,7 @@ router.get("/:id", [param("id").isInt()], async (req, res, next) => {
       `,
       [eventId]
     );
+    const leaderboard = leaderboardRows.map((row, index) => ({ ...row, rank: index + 1 }));
 
     return res.json({ success: true, data: { event: events[0], rounds, leaderboard } });
   } catch (err) {

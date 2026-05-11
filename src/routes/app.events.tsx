@@ -91,9 +91,10 @@ function AppEvents() {
             <span className="font-mono text-xs tabular text-muted-foreground w-20 text-right">
               {e.registered}/{e.capacity}
             </span>
-            <span className="text-sm font-medium text-primary">
-              {e.fee === 0 ? "Free" : fmtPKR(e.fee)}
-            </span>
+            <div className="flex flex-col items-end gap-1">
+              <span className="text-sm font-medium text-primary">{e.fee === 0 ? "Free" : fmtPKR(e.fee)}</span>
+              <span className="rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-[10px] font-medium text-primary">View & register</span>
+            </div>
           </Link>
         ))}
       </div>
