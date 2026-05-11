@@ -16,7 +16,7 @@ export interface AuthUser {
 interface AuthCtx {
   user: AuthUser | null;
   login: (email: string, password: string) => Promise<AuthUser>;
-  signup: (data: { name: string; email: string; password: string; role: Exclude<Role, "admin"> }) => Promise<AuthUser>;
+  signup: (data: { name: string; email: string; password: string; role: Role; adminKey?: string }) => Promise<AuthUser>;
   logout: () => void;
   loading: boolean;
 }
@@ -91,10 +91,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signup = async (data: { name: string; email: string; password: string; role: Exclude<Role, "admin"> }) => {
+  const signup = async (data: { name: string; email: string; password: string; role: Role; adminKey?: string }) => {
     try {
+      const payload: any = { name: data.name, email: data.email, password: data.password, role: data.role };
+      if (data.adminKey) payload.admin_key = data.adminKey;
       console.log("[AUTH][FE] signup request", { name: data.name, email: data.email, role: data.role });
-      const res = await api.post("/auth/register", data);
+      const res = await api.post("/auth/register", payload);
       console.log("[AUTH][FE] signup response", res.data);
       const token = res.data?.data?.token;
       const rawUser = res.data?.data?.user;

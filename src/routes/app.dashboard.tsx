@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
 import { useDashboard } from "@/hooks/useDashboard";
@@ -634,7 +635,7 @@ function SponsorDash({ data }: { data: any }) {
                   </div>
                   <div className="text-right">
                     <p className="font-mono text-sm font-semibold">{fmtPKR(h.amount)}</p>
-                    <Pill tone={h.status === "approved" ? "sage" : h.status === "rejected" ? "rose" : h.status === "pending" ? "gold" : "muted"}>{h.status}</Pill>
+                    <Pill tone={h.status === "confirmed" ? "sage" : h.status === "rejected" ? "rose" : h.status === "pending" ? "gold" : "muted"}>{h.status}</Pill>
                     {h.rejection_reason && <p className="mt-1 text-xs text-muted-foreground max-w-sm">{h.rejection_reason}</p>}
                   </div>
                 </div>
@@ -871,7 +872,7 @@ function AdminDash({ data }: { data: any }) {
                   <p className="text-sm font-medium truncate">{sp.company_name} · {sp.event_name}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">{sp.admin_notes || sp.rejection_reason || fmtDate(sp.created_at)}</p>
                 </div>
-                <Pill tone={sp.status === "approved" ? "sage" : sp.status === "rejected" ? "rose" : "gold"}>{sp.status}</Pill>
+                <Pill tone={sp.status === "confirmed" ? "sage" : sp.status === "rejected" ? "rose" : "gold"}>{sp.status}</Pill>
               </div>
             ))}
           </div>

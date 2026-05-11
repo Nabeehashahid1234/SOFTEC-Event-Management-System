@@ -1,471 +1,392 @@
--- SOFTEC Event Management System — Demo Seed Data
--- Compatible with the current schema.sql schema.
--- Password for ALL users: "password123"
+-- ═══════════════════════════════════════════════════════════════════
+-- SOFTEC '26 — Demo Seed Data
+-- Run AFTER schema.sql in MySQL Workbench.
+-- All passwords are: Password123
+-- Admin secret key: admin_secret
+-- ═══════════════════════════════════════════════════════════════════
 USE softec_db;
+SET FOREIGN_KEY_CHECKS = 0;
 
-SET @dev_hash = '$2a$10$CwTycUXWue0Thq9StjUM0uJ8o6wLYuGkU2m0rQzS9Wy2R3sjJq3Rq';
+-- ─── Users ──────────────────────────────────────────────────────────
+-- password_hash is bcrypt of "Password123"
+INSERT INTO users (user_id, name, email, password_hash, role, status) VALUES
+-- Admin
+(1,  'Admin User',         'admin@softec.pk',          '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin',       'active'),
+-- Organizers
+(2,  'Fatima Malik',       'fatima.malik@softec.pk',   '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'organizer',   'active'),
+(3,  'Hamza Khan',         'hamza.khan@softec.pk',     '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'organizer',   'active'),
+(4,  'Sara Ahmed',         'sara.ahmed@softec.pk',     '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'organizer',   'active'),
+(5,  'Ali Raza',           'ali.raza@softec.pk',       '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'organizer',   'active'),
+(6,  'Nadia Hussain',      'nadia.hussain@softec.pk',  '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'organizer',   'active'),
+-- Judges (user accounts; linked to judges table by email)
+(7,  'Dr. Tariq Mehmood',  'tariq.m@fast.edu.pk',      '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'judge',       'active'),
+(8,  'Prof. Zara Baig',    'zara.baig@fast.edu.pk',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'judge',       'active'),
+(9,  'Dr. Usman Qureshi',  'usman.q@fast.edu.pk',      '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'judge',       'active'),
+(10, 'Sana Maqsood',       'sana.m@techfirm.pk',       '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'judge',       'active'),
+(11, 'Bilal Chaudhry',     'bilal.c@industry.pk',      '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'judge',       'active'),
+(12, 'Dr. Imran Shah',     'imran.shah@fast.edu.pk',   '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'judge',       'active'),
+(13, 'Ayesha Siddiqui',    'ayesha.s@softec.pk',       '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'judge',       'active'),
+(14, 'Omar Farooq',        'omar.f@research.pk',       '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'judge',       'active'),
+-- Sponsors (user accounts)
+(15, 'TechCorp Pakistan',  'sponsor@techcorp.pk',      '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'sponsor',     'active'),
+(16, 'InnovatePK',         'sponsor@innovatepk.com',   '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'sponsor',     'active'),
+(17, 'CodeBase Labs',      'sponsor@codebase.pk',      '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'sponsor',     'active'),
+(18, 'Digital Frontier',   'sponsor@digitalfrontier.pk','$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'sponsor',    'active'),
+(19, 'NexGen Solutions',   'sponsor@nexgen.pk',        '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'sponsor',     'active'),
+(20, 'PakSoft Inc',        'sponsor@paksoft.pk',       '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'sponsor',     'active'),
+-- Participants (21–60)
+(21, 'Ahmed Bilal',        'ahmed.bilal@std.fast.edu.pk',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(22, 'Zainab Tariq',       'zainab.tariq@std.fast.edu.pk',   '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(23, 'Hassan Iqbal',       'hassan.iqbal@std.fast.edu.pk',   '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(24, 'Mahnoor Akhtar',     'mahnoor.akhtar@std.fast.edu.pk', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(25, 'Umar Shahid',        'umar.shahid@std.fast.edu.pk',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(26, 'Sadia Nawaz',        'sadia.nawaz@std.fast.edu.pk',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(27, 'Faisal Jamil',       'faisal.jamil@std.fast.edu.pk',   '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(28, 'Amna Sheikh',        'amna.sheikh@std.fast.edu.pk',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(29, 'Rizwan Malik',       'rizwan.malik@std.fast.edu.pk',   '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(30, 'Hira Yousaf',        'hira.yousaf@std.fast.edu.pk',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(31, 'Kamran Baig',        'kamran.baig@std.fast.edu.pk',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(32, 'Iqra Aslam',         'iqra.aslam@std.fast.edu.pk',     '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(33, 'Bilal Mirza',        'bilal.mirza@std.fast.edu.pk',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(34, 'Noor Fatima',        'noor.fatima@std.fast.edu.pk',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(35, 'Saad Rehman',        'saad.rehman@std.fast.edu.pk',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(36, 'Ayesha Rao',         'ayesha.rao@std.fast.edu.pk',     '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(37, 'Junaid Ali',         'junaid.ali@std.fast.edu.pk',     '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(38, 'Rida Zafar',         'rida.zafar@std.fast.edu.pk',     '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(39, 'Talha Naeem',        'talha.naeem@std.fast.edu.pk',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(40, 'Maryam Butt',        'maryam.butt@std.fast.edu.pk',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(41, 'Asad Latif',         'asad.latif@std.fast.edu.pk',     '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(42, 'Tooba Anwar',        'tooba.anwar@std.fast.edu.pk',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(43, 'Hamid Javed',        'hamid.javed@std.fast.edu.pk',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(44, 'Nimra Rashid',       'nimra.rashid@std.fast.edu.pk',   '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(45, 'Shahid Pervaiz',     'shahid.p@std.fast.edu.pk',       '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(46, 'Lubna Ghani',        'lubna.ghani@std.fast.edu.pk',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(47, 'Waqar Hayat',        'waqar.hayat@std.fast.edu.pk',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(48, 'Shazia Arif',        'shazia.arif@std.fast.edu.pk',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(49, 'Naveed Ullah',       'naveed.ullah@std.fast.edu.pk',   '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(50, 'Sana Liaquat',       'sana.liaquat@std.fast.edu.pk',   '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(51, 'Farhan Yousuf',      'farhan.y@std.fast.edu.pk',       '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(52, 'Asma Noor',          'asma.noor@std.fast.edu.pk',      '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(53, 'Danyal Waseem',      'danyal.w@std.fast.edu.pk',       '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(54, 'Komal Zulfiqar',     'komal.z@std.fast.edu.pk',        '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(55, 'Nauman Saleem',      'nauman.s@std.fast.edu.pk',       '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(56, 'Fareeha Toor',       'fareeha.t@std.fast.edu.pk',      '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(57, 'Zubair Baig',        'zubair.baig@std.fast.edu.pk',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(58, 'Maria Qasim',        'maria.qasim@std.fast.edu.pk',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(59, 'Hamza Riaz',         'hamza.riaz@std.fast.edu.pk',     '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active'),
+(60, 'Huma Khalid',        'huma.khalid@std.fast.edu.pk',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'participant', 'active');
 
--- ─────────────────────────────────────────────────────────────────────────────
--- USERS
--- IDs  1      = admin
---      2–6    = organizers
---      7–56   = participants
---      57–64  = judges (users)
---      65–70  = sponsors (users)
--- ─────────────────────────────────────────────────────────────────────────────
-INSERT INTO users (user_id, name, email, password_hash, role, status, organization, phone) VALUES
-(1,  'Aisha Khan',          'aisha@softec.org',              @dev_hash, 'admin',       'active', 'SOFTEC HQ',          '0300-0000001'),
-(2,  'Sana Riaz',           'sana@softec.org',               @dev_hash, 'organizer',   'active', 'Tech Events Inc',    '0300-0000002'),
-(3,  'Hamza Qureshi',       'hamza.organizer@softec.org',    @dev_hash, 'organizer',   'active', 'Event Corp',         '0300-0000003'),
-(4,  'Minaal Sheikh',       'minaal.organizer@softec.org',   @dev_hash, 'organizer',   'active', 'Event Mgmt',         '0300-0000004'),
-(5,  'Taha Javed',          'taha.organizer@softec.org',     @dev_hash, 'organizer',   'active', 'Tech Academy',       '0300-0000005'),
-(6,  'Rabia Noor',          'rabia.organizer@softec.org',    @dev_hash, 'organizer',   'active', 'Digital Studios',    '0300-0000006'),
--- Participants
-(7,  'Bilal Ahmed',         'bilal@nu.edu.pk',               @dev_hash, 'participant', 'active', NULL, '0300-0000007'),
-(8,  'Hira Iqbal',          'hira@nu.edu.pk',                @dev_hash, 'participant', 'active', NULL, '0300-0000008'),
-(9,  'Omar Sheikh',         'omar@nu.edu.pk',                @dev_hash, 'participant', 'active', NULL, '0300-0000009'),
-(10, 'Zara Malik',          'zara@nu.edu.pk',                @dev_hash, 'participant', 'active', NULL, '0300-0000010'),
-(11, 'Hassan Tariq',        'hassan@nu.edu.pk',              @dev_hash, 'participant', 'active', NULL, '0300-0000011'),
-(12, 'Mariam Sheikh',       'mariam@nu.edu.pk',              @dev_hash, 'participant', 'active', NULL, '0300-0000012'),
-(13, 'Ali Raza',            'ali.raza@nu.edu.pk',            @dev_hash, 'participant', 'active', NULL, '0300-0000013'),
-(14, 'Fatima Noor',         'fatima.noor@nu.edu.pk',         @dev_hash, 'participant', 'active', NULL, '0300-0000014'),
-(15, 'Usman Ali',           'usman.ali@nu.edu.pk',           @dev_hash, 'participant', 'active', NULL, '0300-0000015'),
-(16, 'Noor Fatima',         'noor.fatima@nu.edu.pk',         @dev_hash, 'participant', 'active', NULL, '0300-0000016'),
-(17, 'Saad Khan',           'saad.khan@nu.edu.pk',           @dev_hash, 'participant', 'active', NULL, '0300-0000017'),
-(18, 'Areeba Tariq',        'areeba.tariq@nu.edu.pk',        @dev_hash, 'participant', 'active', NULL, '0300-0000018'),
-(19, 'Daniyal Akram',       'daniyal.akram@nu.edu.pk',       @dev_hash, 'participant', 'active', NULL, '0300-0000019'),
-(20, 'Mahnoor Aziz',        'mahnoor.aziz@nu.edu.pk',        @dev_hash, 'participant', 'active', NULL, '0300-0000020'),
-(21, 'Ahmad Farooq',        'ahmad.farooq@nu.edu.pk',        @dev_hash, 'participant', 'active', NULL, '0300-0000021'),
-(22, 'Laiba Hassan',        'laiba.hassan@nu.edu.pk',        @dev_hash, 'participant', 'active', NULL, '0300-0000022'),
-(23, 'Rayyan Siddiqui',     'rayyan.siddiqui@nu.edu.pk',     @dev_hash, 'participant', 'active', NULL, '0300-0000023'),
-(24, 'Eman Zahid',          'eman.zahid@nu.edu.pk',          @dev_hash, 'participant', 'active', NULL, '0300-0000024'),
-(25, 'Kashif Ilyas',        'kashif.ilyas@nu.edu.pk',        @dev_hash, 'participant', 'active', NULL, '0300-0000025'),
-(26, 'Anaya Butt',          'anaya.butt@nu.edu.pk',          @dev_hash, 'participant', 'active', NULL, '0300-0000026'),
-(27, 'Mustafa Baig',        'mustafa.baig@nu.edu.pk',        @dev_hash, 'participant', 'active', NULL, '0300-0000027'),
-(28, 'Iqra Saleem',         'iqra.saleem@nu.edu.pk',         @dev_hash, 'participant', 'active', NULL, '0300-0000028'),
-(29, 'Shayan Mir',          'shayan.mir@nu.edu.pk',          @dev_hash, 'participant', 'active', NULL, '0300-0000029'),
-(30, 'Amina Yousaf',        'amina.yousaf@nu.edu.pk',        @dev_hash, 'participant', 'active', NULL, '0300-0000030'),
-(31, 'Fahad Nadeem',        'fahad.nadeem@nu.edu.pk',        @dev_hash, 'participant', 'active', NULL, '0300-0000031'),
-(32, 'Kinza Aslam',         'kinza.aslam@nu.edu.pk',         @dev_hash, 'participant', 'active', NULL, '0300-0000032'),
-(33, 'Huzaifa Shah',        'huzaifa.shah@nu.edu.pk',        @dev_hash, 'participant', 'active', NULL, '0300-0000033'),
-(34, 'Sadia Malik',         'sadia.malik@nu.edu.pk',         @dev_hash, 'participant', 'active', NULL, '0300-0000034'),
-(35, 'Rafay Akhtar',        'rafay.akhtar@nu.edu.pk',        @dev_hash, 'participant', 'active', NULL, '0300-0000035'),
-(36, 'Nimra Jamil',         'nimra.jamil@nu.edu.pk',         @dev_hash, 'participant', 'active', NULL, '0300-0000036'),
-(37, 'Arham Gill',          'arham.gill@nu.edu.pk',          @dev_hash, 'participant', 'active', NULL, '0300-0000037'),
-(38, 'Maham Rauf',          'maham.rauf@nu.edu.pk',          @dev_hash, 'participant', 'active', NULL, '0300-0000038'),
-(39, 'Waleed Asif',         'waleed.asif@nu.edu.pk',         @dev_hash, 'participant', 'active', NULL, '0300-0000039'),
-(40, 'Hania Tariq',         'hania.tariq@nu.edu.pk',         @dev_hash, 'participant', 'active', NULL, '0300-0000040'),
-(41, 'Talha Rehman',        'talha.rehman@nu.edu.pk',        @dev_hash, 'participant', 'active', NULL, '0300-0000041'),
-(42, 'Saira Latif',         'saira.latif@nu.edu.pk',         @dev_hash, 'participant', 'active', NULL, '0300-0000042'),
-(43, 'Muneeb Anwar',        'muneeb.anwar@nu.edu.pk',        @dev_hash, 'participant', 'active', NULL, '0300-0000043'),
-(44, 'Alina Qadir',         'alina.qadir@nu.edu.pk',         @dev_hash, 'participant', 'active', NULL, '0300-0000044'),
-(45, 'Dawood Sami',         'dawood.sami@nu.edu.pk',         @dev_hash, 'participant', 'active', NULL, '0300-0000045'),
-(46, 'Mehak Iqbal',         'mehak.iqbal@nu.edu.pk',         @dev_hash, 'participant', 'active', NULL, '0300-0000046'),
-(47, 'Sameer Zafar',        'sameer.zafar@nu.edu.pk',        @dev_hash, 'participant', 'active', NULL, '0300-0000047'),
-(48, 'Rida Kamal',          'rida.kamal@nu.edu.pk',          @dev_hash, 'participant', 'active', NULL, '0300-0000048'),
-(49, 'Haroon Niaz',         'haroon.niaz@nu.edu.pk',         @dev_hash, 'participant', 'active', NULL, '0300-0000049'),
-(50, 'Sehrish Khan',        'sehrish.khan@nu.edu.pk',        @dev_hash, 'participant', 'active', NULL, '0300-0000050'),
-(51, 'Yasir Mehmood',       'yasir.mehmood@nu.edu.pk',       @dev_hash, 'participant', 'active', NULL, '0300-0000051'),
-(52, 'Saba Imran',          'saba.imran@nu.edu.pk',          @dev_hash, 'participant', 'active', NULL, '0300-0000052'),
-(53, 'Adeel Shahid',        'adeel.shahid@nu.edu.pk',        @dev_hash, 'participant', 'active', NULL, '0300-0000053'),
-(54, 'Misha Naveed',        'misha.naveed@nu.edu.pk',        @dev_hash, 'participant', 'active', NULL, '0300-0000054'),
-(55, 'Ibrahim Qasim',       'ibrahim.qasim@nu.edu.pk',       @dev_hash, 'participant', 'active', NULL, '0300-0000055'),
-(56, 'Nashit Raza',         'nashit.raza@nu.edu.pk',         @dev_hash, 'participant', 'active', NULL, '0300-0000056'),
--- Judges (linked by email to judges table)
-(57, 'Dr. Faraz Mahmood',   'faraz@nu.edu.pk',               @dev_hash, 'judge',       'active', 'FAST-NUCES', '0300-1000001'),
-(58, 'Prof. Naila Hashmi',  'naila@nu.edu.pk',               @dev_hash, 'judge',       'active', 'FAST-NUCES', '0300-1000002'),
-(59, 'Dr. Salman Wasti',    'salman.wasti@nu.edu.pk',        @dev_hash, 'judge',       'active', 'FAST-NUCES', '0300-1000003'),
-(60, 'Abeer Kazmi',         'abeer.kazmi@industry.pk',       @dev_hash, 'judge',       'active', 'Industry',   '0300-1000004'),
-(61, 'Dr. Mahwish Arif',    'mahwish.arif@nu.edu.pk',        @dev_hash, 'judge',       'active', 'FAST-NUCES', '0300-1000005'),
-(62, 'Rohail Ansari',       'rohail.ansari@industry.pk',     @dev_hash, 'judge',       'active', 'Industry',   '0300-1000006'),
-(63, 'Dr. Anum Faisal',     'anum.faisal@nu.edu.pk',         @dev_hash, 'judge',       'active', 'FAST-NUCES', '0300-1000007'),
-(64, 'Sarmad Aziz',         'sarmad.aziz@industry.pk',       @dev_hash, 'judge',       'active', 'Industry',   '0300-1000008'),
--- Sponsors (user accounts linked to sponsors table)
-(65, 'Systems Limited',     'patrons@systemsltd.com',        @dev_hash, 'sponsor',     'active', 'Systems Limited',       '042-111-000-001'),
-(66, '10Pearls',            'give@10pearls.com',             @dev_hash, 'sponsor',     'active', '10Pearls',              '042-111-000-002'),
-(67, 'Afiniti',             'marketing@afiniti.com',         @dev_hash, 'sponsor',     'active', 'Afiniti',               '042-111-000-003'),
-(68, 'Devsinc',             'events@devsinc.com',            @dev_hash, 'sponsor',     'active', 'Devsinc',               '042-111-000-004'),
-(69, 'NETSOL Technologies', 'community@netsoltech.com',      @dev_hash, 'sponsor',     'active', 'NETSOL Technologies',   '042-111-000-005'),
-(70, 'Arbisoft',            'campus@arbisoft.com',           @dev_hash, 'sponsor',     'active', 'Arbisoft',              '042-111-000-006');
+-- ─── Venues ─────────────────────────────────────────────────────────
+INSERT INTO venues (venue_id, venue_name, capacity, location, facilities) VALUES
+(1, 'FAST Auditorium',       800, 'FAST-NUCES, Lahore', 'Stage, AV equipment, air conditioning'),
+(2, 'CS Department Hall',    200, 'FAST-NUCES, Lahore', 'Projectors, whiteboard, seating'),
+(3, 'Engineering Block Lab', 120, 'FAST-NUCES, Lahore', 'Computers, high-speed internet, AC'),
+(4, 'Sports Complex',        500, 'FAST-NUCES, Lahore', 'Gaming stations, streaming setup, snack bar');
 
--- ─────────────────────────────────────────────────────────────────────────────
--- VENUES
--- ─────────────────────────────────────────────────────────────────────────────
-INSERT INTO venues (venue_id, venue_name, capacity, facilities, location) VALUES
-(1, 'CS Auditorium',       400, 'Projector, stage, sound system, Wi-Fi', 'FAST Lahore Main Campus'),
-(2, 'EE Hall A',           200, 'Projector, seating, podium',            'Electrical Engineering Block'),
-(3, 'New Building Lab 1',  80,  'High-end PCs, wired internet',          'New Academic Block'),
-(4, 'Sports Complex',      300, 'Gaming arena, booths, seating',         'Sports Complex');
+-- ─── Events ─────────────────────────────────────────────────────────
+INSERT INTO events (event_id, event_name, description, category, event_date, max_participants, registration_fee, prize_pool, event_status, organizer_id, venue_id) VALUES
+(1,  'Speed Programming',       'Solve algorithmic problems faster than anyone else.',                      'Tech Events',          '2026-06-15', 100,  500.00,  150000.00, 'open',      2, 3),
+(2,  'AI Project Showcase',     'Present your machine learning projects to industry judges.',               'Tech Events',          '2026-06-16', 60,   1000.00, 300000.00, 'open',      2, 2),
+(3,  'Business Plan Competition','Pitch your startup idea to investors and win seed funding.',              'Business Competitions', '2026-06-15', 80,   750.00,  250000.00, 'open',      3, 2),
+(4,  'Case Study Challenge',    'Analyse a real company case and present your solution.',                   'Business Competitions', '2026-06-17', 60,   500.00,  120000.00, 'open',      3, 2),
+(5,  'Game Development Jam',    '48-hour hackathon to build and demo your game.',                           'Gaming Tournaments',    '2026-06-14', 80,   600.00,  200000.00, 'open',      4, 4),
+(6,  'VALORANT Championship',   'Campus VALORANT 5v5 tournament. Represent your university.',              'Gaming Tournaments',    '2026-06-16', 50,   300.00,  100000.00, 'open',      4, 4),
+(7,  'Data Science Olympiad',   'Compete in data wrangling, visualisation, and modelling challenges.',     'Tech Events',          '2026-06-15', 80,   600.00,  180000.00, 'open',      5, 3),
+(8,  'Cybersecurity CTF',       'Capture-the-flag competition for ethical hackers.',                       'Tech Events',          '2026-06-17', 60,   500.00,  160000.00, 'open',      5, 3),
+(9,  'Robotics Challenge',      'Design, build, and control a robot to complete a course.',                'Tech Events',          '2026-06-14', 40,   1500.00, 350000.00, 'open',      6, 1),
+(10, 'Debate Tournament',       'SOFTEC inter-university parliamentary debate league.',                    'General Events',       '2026-06-16', 60,   200.00,  80000.00,  'open',      6, 1),
+(11, 'FIFA Weekend',            '1v1 FIFA tournament across two days.',                                    'Gaming Tournaments',   '2026-06-14', 64,   250.00,  75000.00,  'open',      2, 4),
+(12, 'E-Sports Arena',          'Multi-game esports event — PUBG, CS2, and more.',                        'Gaming Tournaments',   '2026-06-15', 120,  400.00,  200000.00, 'open',      3, 4),
+(13, 'Startup Pitch Night',     'Pitch in 5 minutes. Win in 10. Investor panel.',                         'Business Competitions', '2026-06-18', 30,   1000.00, 300000.00, 'open',      4, 2),
+(14, 'UX/UI Design Sprint',     '12-hour design sprint to solve a real product problem.',                  'Tech Events',          '2026-06-13', 50,   500.00,  120000.00, 'open',      5, 2),
+(15, 'Open Source Hackathon',   'Contribute to open source. Best PRs win.',                               'Tech Events',          '2026-06-14', 100,  0.00,    100000.00, 'open',      6, 3),
+(16, 'Photography Exhibition',  'Showcase your best tech-themed photographs.',                             'General Events',       '2026-06-13', 40,   300.00,  50000.00,  'open',      2, 1),
+(17, 'Tech Quiz',               'Test your knowledge of programming, networks, and CS theory.',            'Tech Events',          '2026-06-18', 80,   200.00,  60000.00,  'open',      3, 1),
+(18, 'Entrepreneurship Summit', 'Talks, workshops, and networking with industry leaders.',                 'Business Competitions', '2026-06-17', 200,  0.00,    0.00,      'open',      4, 1),
+(19, 'Board Game Olympics',     'Compete in chess, Scrabble, and strategy board games.',                   'General Events',       '2026-06-15', 60,   150.00,  40000.00,  'open',      5, 2),
+(20, 'Closing Ceremony',        'Awards night, prize distribution, and live performances.',                'General Events',       '2026-06-18', 800,  0.00,    0.00,      'open',      6, 1);
 
--- ─────────────────────────────────────────────────────────────────────────────
--- JUDGES (standalone table — linked to users by email for judging.routes.js)
--- ─────────────────────────────────────────────────────────────────────────────
-INSERT INTO judges (judge_id, name, email, contact, assigned_events_count) VALUES
-(1, 'Dr. Faraz Mahmood',  'faraz@nu.edu.pk',            '0300-1000001', 0),
-(2, 'Prof. Naila Hashmi', 'naila@nu.edu.pk',            '0300-1000002', 0),
-(3, 'Dr. Salman Wasti',   'salman.wasti@nu.edu.pk',     '0300-1000003', 0),
-(4, 'Abeer Kazmi',        'abeer.kazmi@industry.pk',    '0300-1000004', 0),
-(5, 'Dr. Mahwish Arif',   'mahwish.arif@nu.edu.pk',     '0300-1000005', 0),
-(6, 'Rohail Ansari',      'rohail.ansari@industry.pk',  '0300-1000006', 0),
-(7, 'Dr. Anum Faisal',    'anum.faisal@nu.edu.pk',      '0300-1000007', 0),
-(8, 'Sarmad Aziz',        'sarmad.aziz@industry.pk',    '0300-1000008', 0);
+-- ─── Judges (standalone table) ──────────────────────────────────────
+INSERT INTO judges (judge_id, name, email, contact) VALUES
+(1, 'Dr. Tariq Mehmood',  'tariq.m@fast.edu.pk',   '0300-1234567'),
+(2, 'Prof. Zara Baig',    'zara.baig@fast.edu.pk',  '0301-2345678'),
+(3, 'Dr. Usman Qureshi',  'usman.q@fast.edu.pk',    '0302-3456789'),
+(4, 'Sana Maqsood',       'sana.m@techfirm.pk',     '0303-4567890'),
+(5, 'Bilal Chaudhry',     'bilal.c@industry.pk',    '0304-5678901'),
+(6, 'Dr. Imran Shah',     'imran.shah@fast.edu.pk', '0305-6789012'),
+(7, 'Ayesha Siddiqui',    'ayesha.s@softec.pk',     '0306-7890123'),
+(8, 'Omar Farooq',        'omar.f@research.pk',     '0307-8901234');
 
--- ─────────────────────────────────────────────────────────────────────────────
--- EVENTS  (category MUST match ENUM: 'Tech Events' | 'Business Competitions' |
---                                    'Gaming Tournaments' | 'General Events')
--- ─────────────────────────────────────────────────────────────────────────────
-INSERT INTO events (event_id, event_name, description, category, event_date,
-                    max_participants, registered_participants, venue_id,
-                    organizer_id, registration_fee, prize_pool, event_status) VALUES
-(1,  'Speed Programming',
-     'ICPC-style algorithm sprint — solve as many problems as you can in three hours.',
-     'Tech Events', '2026-06-01', 80,  0, 3, 2, 1500.00, 50000.00,  'open'),
-(2,  'SOFTEC Hackathon',
-     'Thirty-six hour product-build challenge from idea to working demo.',
-     'Tech Events', '2026-06-02', 200, 0, 1, 2, 4000.00, 150000.00, 'open'),
-(3,  'AI Model Showdown',
-     'Applied machine-learning competition with live inference demos.',
-     'Tech Events', '2026-06-03', 100, 0, 2, 3, 2500.00, 100000.00, 'open'),
-(4,  'Cyber Security CTF',
-     'Blue-team and red-team security challenges across six attack categories.',
-     'Tech Events', '2026-06-04', 120, 0, 3, 3, 2000.00, 80000.00,  'open'),
-(5,  'Web Engineering Sprint',
-     'End-to-end full-stack build in a single day.',
-     'Tech Events', '2026-06-05', 80,  0, 2, 4, 1800.00, 60000.00,  'open'),
-(6,  'Business Plan Showdown',
-     'Pitch a venture idea to a panel of investors and faculty.',
-     'Business Competitions', '2026-06-06', 60,  0, 1, 4, 2500.00, 75000.00,  'open'),
-(7,  'Marketing Mavericks',
-     'Live 90-minute campaign strategy challenge with real client brief.',
-     'Business Competitions', '2026-06-07', 70,  0, 2, 5, 2000.00, 50000.00,  'open'),
-(8,  'Startup Expo',
-     'Prototype exhibition and investor walk-through.',
-     'Business Competitions', '2026-06-08', 100, 0, 1, 5, 3000.00, 100000.00, 'open'),
-(9,  'Case Study Challenge',
-     'Solve a strategic business case in two hours.',
-     'Business Competitions', '2026-06-09', 80,  0, 2, 6, 1800.00, 50000.00,  'open'),
-(10, 'Finance Guru',
-     'Corporate finance and valuation contest.',
-     'Business Competitions', '2026-06-10', 70,  0, 1, 6, 1200.00, 40000.00,  'open'),
-(11, 'Valorant Championship',
-     'Team FPS tournament — five-versus-five, single elimination.',
-     'Gaming Tournaments', '2026-06-11', 80,  0, 4, 2, 3000.00, 100000.00, 'open'),
-(12, 'Tekken Solo Tournament',
-     'Solo fighting-game bracket, double elimination.',
-     'Gaming Tournaments', '2026-06-12', 64,  0, 4, 3, 1000.00, 30000.00,  'open'),
-(13, 'FIFA Cup',
-     'Console football tournament.',
-     'Gaming Tournaments', '2026-06-13', 64,  0, 4, 4, 1000.00, 30000.00,  'open'),
-(14, 'DOTA 2 Clash',
-     'Five-player MOBA tournament.',
-     'Gaming Tournaments', '2026-06-14', 100, 0, 4, 5, 3500.00, 120000.00, 'open'),
-(15, 'PUBG Mobile Arena',
-     'Squad mobile-esports event.',
-     'Gaming Tournaments', '2026-06-15', 120, 0, 4, 6, 2500.00, 100000.00, 'open'),
-(16, 'Photography Salon',
-     'Juried photography exhibition — print and digital categories.',
-     'General Events', '2026-06-16', 300, 0, 1, 2, 800.00,  25000.00, 'open'),
-(17, 'AI Ethics Symposium',
-     'Panel discussion and moderated debate on responsible AI.',
-     'General Events', '2026-06-17', 200, 0, 2, 3, 500.00,  0.00,     'open'),
-(18, 'Tech Talk Series',
-     'Industry practitioners share real-world lessons — open to all.',
-     'General Events', '2026-06-18', 250, 0, 1, 4, 0.00,   0.00,     'open'),
-(19, 'Closing Concert',
-     'SOFTEC closing ceremony and live concert.',
-     'General Events', '2026-06-19', 300, 0, 4, 5, 1500.00, 0.00,     'open'),
-(20, 'Robotics Showcase',
-     'Student robotics demonstration and live challenges.',
-     'General Events', '2026-06-20', 150, 0, 2, 6, 1000.00, 40000.00, 'open');
-
--- ─────────────────────────────────────────────────────────────────────────────
--- EVENT → JUDGE ASSIGNMENTS (judge_id references judges.judge_id)
--- ─────────────────────────────────────────────────────────────────────────────
+-- ─── Event–Judge assignments ─────────────────────────────────────────
 INSERT INTO event_judges (event_id, judge_id) VALUES
-(1,1),(1,3),
-(2,1),(2,4),
-(3,5),(3,7),
-(4,6),(4,8),
-(5,2),(5,4),
-(6,2),(6,4),
-(7,2),(7,7),
-(8,4),(8,8),
-(9,7),(9,3),
-(10,2),(10,6),
-(11,1),(11,5),
-(12,3),(12,6),
-(13,4),(13,7),
-(14,5),(14,8),
-(15,6),(15,3),
-(16,8),(16,2),
-(17,5),(17,7),
-(18,1),
-(19,3),
-(20,7),(20,4);
+(1,  1), (1,  2),
+(2,  3), (2,  4),
+(3,  5), (3,  6),
+(4,  7), (4,  8),
+(5,  1), (5,  3),
+(6,  2), (6,  4),
+(7,  5), (7,  7),
+(8,  6), (8,  8),
+(9,  1), (9,  2),
+(10, 3), (10, 6),
+(11, 4), (11, 7),
+(12, 5), (12, 8),
+(13, 1), (13, 6),
+(14, 2), (14, 7),
+(15, 3), (15, 8),
+(16, 4),
+(17, 5),
+(18, 6),
+(19, 7),
+(20, 8);
 
--- ─────────────────────────────────────────────────────────────────────────────
--- SPONSORS (company profiles linked to sponsor user accounts)
--- ─────────────────────────────────────────────────────────────────────────────
-INSERT INTO sponsors (sponsor_id, company_name, contact_person, email, phone,
-                      sponsorship_level, amount, user_id) VALUES
-(1, 'Systems Limited',     'Nadia Qureshi', 'patrons@systemsltd.com', '042-111-000-001', 'Title',  2500000.00, 65),
-(2, '10Pearls',            'Asim Malik',    'give@10pearls.com',      '042-111-000-002', 'Gold',   1500000.00, 66),
-(3, 'Afiniti',             'Sara Raza',     'marketing@afiniti.com',  '042-111-000-003', 'Silver', 1000000.00, 67),
-(4, 'Devsinc',             'Bilal Tariq',   'events@devsinc.com',     '042-111-000-004', 'Silver',  750000.00, 68),
-(5, 'NETSOL Technologies', 'Hania Asif',    'community@netsoltech.com','042-111-000-005','Silver',  500000.00, 69),
-(6, 'Arbisoft',            'Hamid Khan',    'campus@arbisoft.com',    '042-111-000-006', 'Silver',  450000.00, 70);
+-- ─── Sponsors ────────────────────────────────────────────────────────
+INSERT INTO sponsors (sponsor_id, user_id, company_name, contact_person, email, phone, sponsorship_level, amount) VALUES
+(1, 15, 'TechCorp Pakistan',  'Ali Imtiaz',    'sponsor@techcorp.pk',       '042-35761234', 'Title',  1200000.00),
+(2, 16, 'InnovatePK',         'Sara Haider',   'sponsor@innovatepk.com',    '042-35891234', 'Gold',    600000.00),
+(3, 17, 'CodeBase Labs',      'Raza Ahmed',    'sponsor@codebase.pk',       '042-35691234', 'Gold',    400000.00),
+(4, 18, 'Digital Frontier',   'Hina Malik',    'sponsor@digitalfrontier.pk','042-35201234', 'Silver',  350000.00),
+(5, 19, 'NexGen Solutions',   'Imran Siddiqui','sponsor@nexgen.pk',         '042-35801234', 'Silver',  200000.00),
+(6, 20, 'PakSoft Inc',        'Faisal Aziz',   'sponsor@paksoft.pk',        '042-35701234', 'Bronze',  100000.00);
 
--- ─────────────────────────────────────────────────────────────────────────────
--- SPONSORSHIPS
--- ─────────────────────────────────────────────────────────────────────────────
-INSERT INTO sponsorships (sponsor_id, user_id, event_id, sponsorship_type, amount, status, approved_by, approved_at, rejection_reason, admin_notes) VALUES
-(1, 65, 2,  'Title',  1200000.00, 'approved', 1, '2026-05-04 09:00:00', NULL, 'Flagship sponsorship approved.'),
-(1, 65, 1,  'Gold',    500000.00, 'approved', 1, '2026-05-04 09:05:00', NULL, 'Approved for programme support.'),
-(2, 66, 3,  'Gold',    450000.00, 'approved', 1, '2026-05-04 09:10:00', NULL, 'Approved after finance review.'),
-(2, 66, 5,  'Silver',  250000.00, 'approved', 1, '2026-05-04 09:15:00', NULL, 'Approved after committee review.'),
-(3, 67, 6,  'Gold',    400000.00, 'approved', 1, '2026-05-04 09:20:00', NULL, 'Approved for main stage branding.'),
-(3, 67, 7,  'Silver',  200000.00, 'pending', NULL, NULL, NULL, NULL),
-(4, 68, 11, 'Gold',    350000.00, 'approved', 1, '2026-05-04 09:25:00', NULL, 'Approved for esports event.'),
-(4, 68, 12, 'Silver',  150000.00, 'approved', 1, '2026-05-04 09:30:00', NULL, 'Approved for tournament support.'),
-(5, 69, 16, 'Silver',  125000.00, 'rejected', 1, '2026-05-04 09:35:00', 'Requested amount exceeds sponsor tier policy.', 'Rejection logged after admin review.'),
-(6, 70, 20, 'Silver',  100000.00, 'approved', 1, '2026-05-04 09:40:00', NULL, 'Approved for showcase sponsorship.');
+-- ─── Sponsorships ────────────────────────────────────────────────────
+INSERT INTO sponsorships (sponsorship_id, sponsor_id, user_id, event_id, sponsorship_type, amount, status, approved_by, approved_at, admin_notes) VALUES
+(1, 1, 15, 2,  'Title',  1200000.00, 'confirmed', 1, '2026-05-04 09:00:00', 'Flagship sponsorship confirmed.'),
+(2, 1, 15, 1,  'Gold',    500000.00, 'confirmed', 1, '2026-05-04 09:05:00', 'Confirmed for programme support.'),
+(3, 2, 16, 3,  'Gold',    450000.00, 'confirmed', 1, '2026-05-04 09:10:00', 'Confirmed after finance review.'),
+(4, 2, 16, 5,  'Silver',  250000.00, 'confirmed', 1, '2026-05-04 09:15:00', 'Confirmed after committee review.'),
+(5, 3, 17, 6,  'Gold',    400000.00, 'confirmed', 1, '2026-05-04 09:20:00', 'Confirmed for main stage branding.'),
+(6, 4, 18, 9,  'Silver',  200000.00, 'pending',   NULL, NULL, NULL),
+(7, 4, 18, 11, 'Gold',    350000.00, 'confirmed', 1, '2026-05-04 09:25:00', 'Confirmed for esports event.'),
+(8, 4, 18, 12, 'Silver',  150000.00, 'confirmed', 1, '2026-05-04 09:30:00', 'Confirmed for tournament support.'),
+(9, 5, 19, 7,  'Silver',  180000.00, 'pending',   NULL, NULL, NULL),
+(10,6, 20, 20, 'Bronze',  100000.00, 'confirmed', 1, '2026-05-04 09:40:00', 'Confirmed for showcase sponsorship.');
 
--- ─────────────────────────────────────────────────────────────────────────────
--- PARTICIPANTS
--- Covers events 1, 2, 3, 6, 7, 11, 12, 16 with realistic numbers.
--- participant_id auto-increments; referenced later by judging + passes.
--- ─────────────────────────────────────────────────────────────────────────────
+-- ─── Participants ────────────────────────────────────────────────────
 INSERT INTO participants (participant_id, user_id, event_id) VALUES
--- Event 1 · Speed Programming
-(1,  7,  1),(2,  8,  1),(3,  9,  1),(4,  10, 1),(5,  11, 1),
-(6,  12, 1),(7,  13, 1),(8,  14, 1),(9,  15, 1),(10, 16, 1),
-(11, 17, 1),(12, 18, 1),(13, 19, 1),(14, 20, 1),(15, 21, 1),
--- Event 2 · SOFTEC Hackathon
-(16, 7,  2),(17, 8,  2),(18, 9,  2),(19, 10, 2),(20, 11, 2),
-(21, 13, 2),(22, 14, 2),(23, 22, 2),(24, 23, 2),(25, 24, 2),
--- Event 3 · AI Model Showdown
-(26, 10, 3),(27, 15, 3),(28, 16, 3),(29, 17, 3),
--- Event 6 · Business Plan Showdown
-(30, 17, 6),(31, 18, 6),(32, 19, 6),(33, 20, 6),
--- Event 7 · Marketing Mavericks
-(34, 21, 7),(35, 22, 7),
--- Event 11 · Valorant Championship
-(36, 19, 11),(37, 20, 11),(38, 21, 11),(39, 22, 11),
--- Event 12 · Tekken Solo
-(40, 23, 12),(41, 24, 12),(42, 25, 12),
--- Event 16 · Photography Salon
-(43, 20, 16),(44, 26, 16),(45, 27, 16);
+-- Event 1: Speed Programming (20 participants)
+(1,  21, 1), (2,  22, 1), (3,  23, 1), (4,  24, 1), (5,  25, 1),
+(6,  26, 1), (7,  27, 1), (8,  28, 1), (9,  29, 1), (10, 30, 1),
+(11, 31, 1), (12, 32, 1), (13, 33, 1), (14, 34, 1), (15, 35, 1),
+(16, 36, 1), (17, 37, 1), (18, 38, 1), (19, 39, 1), (20, 40, 1),
+-- Event 2: AI Project Showcase (10 participants)
+(21, 21, 2), (22, 23, 2), (23, 25, 2), (24, 27, 2), (25, 29, 2),
+(26, 31, 2), (27, 33, 2), (28, 35, 2), (29, 37, 2), (30, 39, 2),
+-- Event 3: Business Plan Competition (10 participants)
+(31, 22, 3), (32, 24, 3), (33, 26, 3), (34, 28, 3), (35, 30, 3),
+(36, 32, 3), (37, 34, 3), (38, 36, 3), (39, 38, 3), (40, 40, 3),
+-- Event 5: Game Dev Jam (8 participants)
+(41, 41, 5), (42, 42, 5), (43, 43, 5), (44, 44, 5),
+(45, 45, 5), (46, 46, 5), (47, 47, 5), (48, 48, 5),
+-- Event 7: Data Science Olympiad (8 participants)
+(49, 49, 7), (50, 50, 7), (51, 51, 7), (52, 52, 7),
+(53, 53, 7), (54, 54, 7), (55, 55, 7), (56, 56, 7),
+-- Event 8: Cybersecurity CTF (5 participants)
+(57, 57, 8), (58, 58, 8), (59, 59, 8), (60, 60, 8), (61, 21, 8),
+-- Event 15: Open Source Hackathon (free, 4 participants)
+(62, 22, 15), (63, 24, 15), (64, 26, 15), (65, 28, 15);
 
--- ─────────────────────────────────────────────────────────────────────────────
--- PAYMENTS (registration payments; sponsorship payments already handled above
---           via sponsorships table — we just create their payment records here)
--- ─────────────────────────────────────────────────────────────────────────────
-INSERT INTO payments (payment_id, user_id, event_id, amount, payment_type, status, payment_date) VALUES
--- Event 1 registrations (all completed)
-(1,  7,  1, 1500.00, 'registration', 'completed', '2026-05-01 10:00:00'),
-(2,  8,  1, 1500.00, 'registration', 'completed', '2026-05-01 11:00:00'),
-(3,  9,  1, 1500.00, 'registration', 'completed', '2026-05-02 10:00:00'),
-(4,  10, 1, 1500.00, 'registration', 'completed', '2026-05-02 11:00:00'),
-(5,  11, 1, 1500.00, 'registration', 'completed', '2026-05-03 10:00:00'),
-(6,  12, 1, 1500.00, 'registration', 'completed', '2026-05-03 11:00:00'),
-(7,  13, 1, 1500.00, 'registration', 'completed', '2026-05-04 10:00:00'),
-(8,  14, 1, 1500.00, 'registration', 'completed', '2026-05-04 11:00:00'),
-(9,  15, 1, 1500.00, 'registration', 'completed', '2026-05-05 10:00:00'),
-(10, 16, 1, 1500.00, 'registration', 'completed', '2026-05-05 11:00:00'),
-(11, 17, 1, 1500.00, 'registration', 'completed', '2026-05-06 10:00:00'),
-(12, 18, 1, 1500.00, 'registration', 'completed', '2026-05-06 11:00:00'),
-(13, 19, 1, 1500.00, 'registration', 'completed', '2026-05-07 10:00:00'),
-(14, 20, 1, 1500.00, 'registration', 'completed', '2026-05-07 11:00:00'),
-(15, 21, 1, 1500.00, 'registration', 'completed', '2026-05-08 10:00:00'),
--- Event 2 registrations (mix of completed + pending)
-(16, 7,  2, 4000.00, 'registration', 'completed', '2026-05-08 11:00:00'),
-(17, 8,  2, 4000.00, 'registration', 'completed', '2026-05-09 10:00:00'),
-(18, 9,  2, 4000.00, 'registration', 'completed', '2026-05-09 11:00:00'),
-(19, 10, 2, 4000.00, 'registration', 'completed', '2026-05-10 10:00:00'),
-(20, 11, 2, 4000.00, 'registration', 'completed', '2026-05-10 11:00:00'),
-(21, 13, 2, 4000.00, 'registration', 'completed', '2026-05-11 10:00:00'),
-(22, 14, 2, 4000.00, 'registration', 'completed', '2026-05-11 11:00:00'),
-(23, 22, 2, 4000.00, 'registration', 'pending',   '2026-05-12 10:00:00'),
-(24, 23, 2, 4000.00, 'registration', 'pending',   '2026-05-12 11:00:00'),
-(25, 24, 2, 4000.00, 'registration', 'pending',   '2026-05-13 10:00:00'),
--- Event 3 registrations
-(26, 10, 3, 2500.00, 'registration', 'completed', '2026-05-13 11:00:00'),
-(27, 15, 3, 2500.00, 'registration', 'completed', '2026-05-14 10:00:00'),
-(28, 16, 3, 2500.00, 'registration', 'completed', '2026-05-14 11:00:00'),
-(29, 17, 3, 2500.00, 'registration', 'pending',   '2026-05-15 10:00:00'),
--- Event 6 registrations
-(30, 17, 6, 2500.00, 'registration', 'completed', '2026-05-15 11:00:00'),
-(31, 18, 6, 2500.00, 'registration', 'completed', '2026-05-16 10:00:00'),
-(32, 19, 6, 2500.00, 'registration', 'pending',   '2026-05-16 11:00:00'),
-(33, 20, 6, 2500.00, 'registration', 'pending',   '2026-05-17 10:00:00'),
--- Event 7 registrations
-(34, 21, 7, 2000.00, 'registration', 'completed', '2026-05-17 11:00:00'),
-(35, 22, 7, 2000.00, 'registration', 'pending',   '2026-05-18 10:00:00'),
--- Event 11 registrations
-(36, 19, 11, 3000.00, 'registration', 'completed', '2026-05-18 11:00:00'),
-(37, 20, 11, 3000.00, 'registration', 'completed', '2026-05-19 10:00:00'),
-(38, 21, 11, 3000.00, 'registration', 'pending',   '2026-05-19 11:00:00'),
-(39, 22, 11, 3000.00, 'registration', 'pending',   '2026-05-20 10:00:00'),
--- Event 12 registrations
-(40, 23, 12, 1000.00, 'registration', 'completed', '2026-05-20 11:00:00'),
-(41, 24, 12, 1000.00, 'registration', 'completed', '2026-05-21 10:00:00'),
-(42, 25, 12, 1000.00, 'registration', 'pending',   '2026-05-21 11:00:00'),
--- Event 16 registrations
-(43, 20, 16,  800.00, 'registration', 'completed', '2026-05-22 10:00:00'),
-(44, 26, 16,  800.00, 'registration', 'completed', '2026-05-22 11:00:00'),
-(45, 27, 16,  800.00, 'registration', 'completed', '2026-05-23 10:00:00'),
+-- ─── Payments ────────────────────────────────────────────────────────
+-- Registration payments for events with fees
+INSERT INTO payments (user_id, event_id, amount, payment_type, status) VALUES
+-- Event 1 (fee 500) - all 20 registered, 15 completed, 5 pending
+(21, 1, 500.00, 'registration', 'completed'), (22, 1, 500.00, 'registration', 'completed'),
+(23, 1, 500.00, 'registration', 'completed'), (24, 1, 500.00, 'registration', 'completed'),
+(25, 1, 500.00, 'registration', 'completed'), (26, 1, 500.00, 'registration', 'completed'),
+(27, 1, 500.00, 'registration', 'completed'), (28, 1, 500.00, 'registration', 'completed'),
+(29, 1, 500.00, 'registration', 'completed'), (30, 1, 500.00, 'registration', 'completed'),
+(31, 1, 500.00, 'registration', 'completed'), (32, 1, 500.00, 'registration', 'completed'),
+(33, 1, 500.00, 'registration', 'completed'), (34, 1, 500.00, 'registration', 'completed'),
+(35, 1, 500.00, 'registration', 'completed'),
+(36, 1, 500.00, 'registration', 'pending'),   (37, 1, 500.00, 'registration', 'pending'),
+(38, 1, 500.00, 'registration', 'pending'),   (39, 1, 500.00, 'registration', 'pending'),
+(40, 1, 500.00, 'registration', 'pending'),
+-- Event 2 (fee 1000) - 10 registered, 8 completed
+(21, 2, 1000.00, 'registration', 'completed'), (23, 2, 1000.00, 'registration', 'completed'),
+(25, 2, 1000.00, 'registration', 'completed'), (27, 2, 1000.00, 'registration', 'completed'),
+(29, 2, 1000.00, 'registration', 'completed'), (31, 2, 1000.00, 'registration', 'completed'),
+(33, 2, 1000.00, 'registration', 'completed'), (35, 2, 1000.00, 'registration', 'completed'),
+(37, 2, 1000.00, 'registration', 'pending'),   (39, 2, 1000.00, 'registration', 'pending'),
+-- Event 3 (fee 750) - 10 registered, 6 completed
+(22, 3, 750.00, 'registration', 'completed'), (24, 3, 750.00, 'registration', 'completed'),
+(26, 3, 750.00, 'registration', 'completed'), (28, 3, 750.00, 'registration', 'completed'),
+(30, 3, 750.00, 'registration', 'completed'), (32, 3, 750.00, 'registration', 'completed'),
+(34, 3, 750.00, 'registration', 'pending'),   (36, 3, 750.00, 'registration', 'pending'),
+(38, 3, 750.00, 'registration', 'pending'),   (40, 3, 750.00, 'registration', 'pending'),
+-- Event 5 (fee 600) - 8 registered, all completed
+(41, 5, 600.00, 'registration', 'completed'), (42, 5, 600.00, 'registration', 'completed'),
+(43, 5, 600.00, 'registration', 'completed'), (44, 5, 600.00, 'registration', 'completed'),
+(45, 5, 600.00, 'registration', 'completed'), (46, 5, 600.00, 'registration', 'completed'),
+(47, 5, 600.00, 'registration', 'completed'), (48, 5, 600.00, 'registration', 'completed'),
+-- Event 7 (fee 600) - 8 registered, 5 completed
+(49, 7, 600.00, 'registration', 'completed'), (50, 7, 600.00, 'registration', 'completed'),
+(51, 7, 600.00, 'registration', 'completed'), (52, 7, 600.00, 'registration', 'completed'),
+(53, 7, 600.00, 'registration', 'completed'),
+(54, 7, 600.00, 'registration', 'pending'),   (55, 7, 600.00, 'registration', 'pending'),
+(56, 7, 600.00, 'registration', 'pending'),
+-- Event 8 (fee 500) - 5 registered, all completed
+(57, 8, 500.00, 'registration', 'completed'), (58, 8, 500.00, 'registration', 'completed'),
+(59, 8, 500.00, 'registration', 'completed'), (60, 8, 500.00, 'registration', 'completed'),
+(21, 8, 500.00, 'registration', 'completed'),
+-- Event 15 (free) - 4 participants, payments all auto-completed
+(22, 15, 0.00, 'registration', 'completed'), (24, 15, 0.00, 'registration', 'completed'),
+(26, 15, 0.00, 'registration', 'completed'), (28, 15, 0.00, 'registration', 'completed'),
 -- Sponsorship payments
-(50, 65, 2,  1200000.00, 'sponsorship', 'completed', '2026-05-01 09:00:00'),
-(51, 65, 1,   500000.00, 'sponsorship', 'completed', '2026-05-01 09:30:00'),
-(52, 66, 3,   450000.00, 'sponsorship', 'completed', '2026-05-02 09:00:00'),
-(53, 66, 5,   250000.00, 'sponsorship', 'completed', '2026-05-02 09:30:00'),
-(54, 67, 6,   400000.00, 'sponsorship', 'completed', '2026-05-03 09:00:00'),
-(55, 67, 7,   200000.00, 'sponsorship', 'pending',   '2026-05-03 09:30:00'),
-(56, 68, 11,  350000.00, 'sponsorship', 'completed', '2026-05-04 09:00:00'),
-(57, 68, 12,  150000.00, 'sponsorship', 'completed', '2026-05-04 09:30:00'),
-(58, 69, 16,  125000.00, 'sponsorship', 'failed',    '2026-05-05 09:00:00'),
-(59, 70, 20,  100000.00, 'sponsorship', 'completed', '2026-05-05 09:30:00'),
--- Accommodation payments
-(60, 7,  NULL, 4500.00, 'accommodation', 'completed', '2026-05-10 12:00:00'),
-(61, 8,  NULL, 4500.00, 'accommodation', 'completed', '2026-05-10 13:00:00');
+(15, 2,  1200000.00, 'sponsorship', 'completed'),
+(15, 1,   500000.00, 'sponsorship', 'completed'),
+(16, 3,   450000.00, 'sponsorship', 'completed'),
+(16, 5,   250000.00, 'sponsorship', 'completed'),
+(17, 6,   400000.00, 'sponsorship', 'completed'),
+(18, 9,   200000.00, 'sponsorship', 'pending'),
+(18, 11,  350000.00, 'sponsorship', 'completed'),
+(18, 12,  150000.00, 'sponsorship', 'completed'),
+(19, 7,   180000.00, 'sponsorship', 'pending'),
+(20, 20,  100000.00, 'sponsorship', 'completed');
 
--- ─────────────────────────────────────────────────────────────────────────────
--- PASSES (one pass per completed-payment participant; UUID() for pass_id)
--- ─────────────────────────────────────────────────────────────────────────────
-INSERT INTO passes (pass_id, participant_id, event_id, qr_code, status) VALUES
-('a1b2c3d4-0001-0001-0001-000000000001', 1,  1, 'SOFTEC-E1-P1',  'issued'),
-('a1b2c3d4-0002-0002-0002-000000000002', 2,  1, 'SOFTEC-E1-P2',  'issued'),
-('a1b2c3d4-0003-0003-0003-000000000003', 3,  1, 'SOFTEC-E1-P3',  'issued'),
-('a1b2c3d4-0004-0004-0004-000000000004', 4,  1, 'SOFTEC-E1-P4',  'issued'),
-('a1b2c3d4-0005-0005-0005-000000000005', 5,  1, 'SOFTEC-E1-P5',  'issued'),
-('a1b2c3d4-0006-0006-0006-000000000006', 6,  1, 'SOFTEC-E1-P6',  'issued'),
-('a1b2c3d4-0007-0007-0007-000000000007', 7,  1, 'SOFTEC-E1-P7',  'issued'),
-('a1b2c3d4-0008-0008-0008-000000000008', 8,  1, 'SOFTEC-E1-P8',  'issued'),
-('a1b2c3d4-0009-0009-0009-000000000009', 9,  1, 'SOFTEC-E1-P9',  'issued'),
-('a1b2c3d4-0010-0010-0010-000000000010', 10, 1, 'SOFTEC-E1-P10', 'issued'),
-('a1b2c3d4-0011-0011-0011-000000000011', 11, 1, 'SOFTEC-E1-P11', 'issued'),
-('a1b2c3d4-0012-0012-0012-000000000012', 12, 1, 'SOFTEC-E1-P12', 'issued'),
-('a1b2c3d4-0013-0013-0013-000000000013', 13, 1, 'SOFTEC-E1-P13', 'issued'),
-('a1b2c3d4-0014-0014-0014-000000000014', 14, 1, 'SOFTEC-E1-P14', 'issued'),
-('a1b2c3d4-0015-0015-0015-000000000015', 15, 1, 'SOFTEC-E1-P15', 'issued'),
-('a1b2c3d4-0016-0016-0016-000000000016', 16, 2, 'SOFTEC-E2-P1',  'issued'),
-('a1b2c3d4-0017-0017-0017-000000000017', 17, 2, 'SOFTEC-E2-P2',  'issued'),
-('a1b2c3d4-0018-0018-0018-000000000018', 18, 2, 'SOFTEC-E2-P3',  'issued'),
-('a1b2c3d4-0019-0019-0019-000000000019', 19, 2, 'SOFTEC-E2-P4',  'issued'),
-('a1b2c3d4-0020-0020-0020-000000000020', 20, 2, 'SOFTEC-E2-P5',  'issued'),
-('a1b2c3d4-0021-0021-0021-000000000021', 21, 2, 'SOFTEC-E2-P6',  'issued'),
-('a1b2c3d4-0022-0022-0022-000000000022', 22, 2, 'SOFTEC-E2-P7',  'issued'),
-('a1b2c3d4-0026-0026-0026-000000000026', 26, 3, 'SOFTEC-E3-P1',  'issued'),
-('a1b2c3d4-0027-0027-0027-000000000027', 27, 3, 'SOFTEC-E3-P2',  'issued'),
-('a1b2c3d4-0028-0028-0028-000000000028', 28, 3, 'SOFTEC-E3-P3',  'issued'),
-('a1b2c3d4-0030-0030-0030-000000000030', 30, 6, 'SOFTEC-E6-P1',  'issued'),
-('a1b2c3d4-0031-0031-0031-000000000031', 31, 6, 'SOFTEC-E6-P2',  'issued'),
-('a1b2c3d4-0034-0034-0034-000000000034', 34, 7, 'SOFTEC-E7-P1',  'issued'),
-('a1b2c3d4-0036-0036-0036-000000000036', 36, 11,'SOFTEC-E11-P1', 'issued'),
-('a1b2c3d4-0037-0037-0037-000000000037', 37, 11,'SOFTEC-E11-P2', 'issued'),
-('a1b2c3d4-0040-0040-0040-000000000040', 40, 12,'SOFTEC-E12-P1', 'issued'),
-('a1b2c3d4-0041-0041-0041-000000000041', 41, 12,'SOFTEC-E12-P2', 'issued'),
-('a1b2c3d4-0043-0043-0043-000000000043', 43, 16,'SOFTEC-E16-P1', 'issued'),
-('a1b2c3d4-0044-0044-0044-000000000044', 44, 16,'SOFTEC-E16-P2', 'issued'),
-('a1b2c3d4-0045-0045-0045-000000000045', 45, 16,'SOFTEC-E16-P3', 'issued');
+-- ─── Passes ──────────────────────────────────────────────────────────
+-- Issued for completed registration payments
+INSERT INTO passes (pass_id, participant_id, event_id, status, qr_code) VALUES
+('p1a2b3c4-0001-0001-0001-000000000001', 1,  1, 'issued',   'SOFTEC-1-1'),
+('p1a2b3c4-0002-0002-0002-000000000002', 2,  1, 'issued',   'SOFTEC-1-2'),
+('p1a2b3c4-0003-0003-0003-000000000003', 3,  1, 'issued',   'SOFTEC-1-3'),
+('p1a2b3c4-0004-0004-0004-000000000004', 4,  1, 'issued',   'SOFTEC-1-4'),
+('p1a2b3c4-0005-0005-0005-000000000005', 5,  1, 'issued',   'SOFTEC-1-5'),
+('p1a2b3c4-0006-0006-0006-000000000006', 6,  1, 'redeemed', 'SOFTEC-1-6'),
+('p1a2b3c4-0007-0007-0007-000000000007', 7,  1, 'issued',   'SOFTEC-1-7'),
+('p1a2b3c4-0008-0008-0008-000000000008', 8,  1, 'issued',   'SOFTEC-1-8'),
+('p1a2b3c4-0009-0009-0009-000000000009', 9,  1, 'issued',   'SOFTEC-1-9'),
+('p1a2b3c4-0010-0010-0010-000000000010', 10, 1, 'issued',   'SOFTEC-1-10'),
+('p1a2b3c4-0011-0011-0011-000000000011', 11, 1, 'issued',   'SOFTEC-1-11'),
+('p1a2b3c4-0012-0012-0012-000000000012', 12, 1, 'issued',   'SOFTEC-1-12'),
+('p1a2b3c4-0013-0013-0013-000000000013', 13, 1, 'issued',   'SOFTEC-1-13'),
+('p1a2b3c4-0014-0014-0014-000000000014', 14, 1, 'issued',   'SOFTEC-1-14'),
+('p1a2b3c4-0015-0015-0015-000000000015', 15, 1, 'issued',   'SOFTEC-1-15'),
+-- Event 2 passes
+('p2a2b3c4-0001-0001-0001-000000000021', 21, 2, 'issued',   'SOFTEC-2-21'),
+('p2a2b3c4-0002-0002-0002-000000000022', 22, 2, 'issued',   'SOFTEC-2-22'),
+('p2a2b3c4-0003-0003-0003-000000000023', 23, 2, 'issued',   'SOFTEC-2-23'),
+('p2a2b3c4-0004-0004-0004-000000000024', 24, 2, 'issued',   'SOFTEC-2-24'),
+('p2a2b3c4-0005-0005-0005-000000000025', 25, 2, 'issued',   'SOFTEC-2-25'),
+('p2a2b3c4-0006-0006-0006-000000000026', 26, 2, 'issued',   'SOFTEC-2-26'),
+('p2a2b3c4-0007-0007-0007-000000000027', 27, 2, 'issued',   'SOFTEC-2-27'),
+('p2a2b3c4-0008-0008-0008-000000000028', 28, 2, 'issued',   'SOFTEC-2-28'),
+-- Event 3 passes
+('p3a2b3c4-0001-0001-0001-000000000031', 31, 3, 'issued',   'SOFTEC-3-31'),
+('p3a2b3c4-0002-0002-0002-000000000032', 32, 3, 'issued',   'SOFTEC-3-32'),
+('p3a2b3c4-0003-0003-0003-000000000033', 33, 3, 'issued',   'SOFTEC-3-33'),
+('p3a2b3c4-0004-0004-0004-000000000034', 34, 3, 'issued',   'SOFTEC-3-34'),
+('p3a2b3c4-0005-0005-0005-000000000035', 35, 3, 'issued',   'SOFTEC-3-35'),
+('p3a2b3c4-0006-0006-0006-000000000036', 36, 3, 'issued',   'SOFTEC-3-36'),
+-- Event 5 passes
+('p5a2b3c4-0001-0001-0001-000000000041', 41, 5, 'issued',   'SOFTEC-5-41'),
+('p5a2b3c4-0002-0002-0002-000000000042', 42, 5, 'issued',   'SOFTEC-5-42'),
+('p5a2b3c4-0003-0003-0003-000000000043', 43, 5, 'issued',   'SOFTEC-5-43'),
+('p5a2b3c4-0004-0004-0004-000000000044', 44, 5, 'issued',   'SOFTEC-5-44'),
+('p5a2b3c4-0005-0005-0005-000000000045', 45, 5, 'issued',   'SOFTEC-5-45'),
+('p5a2b3c4-0006-0006-0006-000000000046', 46, 5, 'issued',   'SOFTEC-5-46'),
+('p5a2b3c4-0007-0007-0007-000000000047', 47, 5, 'issued',   'SOFTEC-5-47'),
+('p5a2b3c4-0008-0008-0008-000000000048', 48, 5, 'issued',   'SOFTEC-5-48'),
+-- Event 7 passes
+('p7a2b3c4-0001-0001-0001-000000000049', 49, 7, 'issued',   'SOFTEC-7-49'),
+('p7a2b3c4-0002-0002-0002-000000000050', 50, 7, 'issued',   'SOFTEC-7-50'),
+('p7a2b3c4-0003-0003-0003-000000000051', 51, 7, 'issued',   'SOFTEC-7-51'),
+('p7a2b3c4-0004-0004-0004-000000000052', 52, 7, 'issued',   'SOFTEC-7-52'),
+('p7a2b3c4-0005-0005-0005-000000000053', 53, 7, 'issued',   'SOFTEC-7-53'),
+-- Event 8 passes
+('p8a2b3c4-0001-0001-0001-000000000057', 57, 8, 'issued',   'SOFTEC-8-57'),
+('p8a2b3c4-0002-0002-0002-000000000058', 58, 8, 'issued',   'SOFTEC-8-58'),
+('p8a2b3c4-0003-0003-0003-000000000059', 59, 8, 'issued',   'SOFTEC-8-59'),
+('p8a2b3c4-0004-0004-0004-000000000060', 60, 8, 'issued',   'SOFTEC-8-60'),
+('p8a2b3c4-0005-0005-0005-000000000061', 61, 8, 'issued',   'SOFTEC-8-61'),
+-- Event 15 passes (free)
+('p15a2b3c-0001-0001-0001-000000000062', 62, 15, 'issued',  'SOFTEC-15-62'),
+('p15a2b3c-0002-0002-0002-000000000063', 63, 15, 'issued',  'SOFTEC-15-63'),
+('p15a2b3c-0003-0003-0003-000000000064', 64, 15, 'issued',  'SOFTEC-15-64'),
+('p15a2b3c-0004-0004-0004-000000000065', 65, 15, 'issued',  'SOFTEC-15-65');
 
--- ─────────────────────────────────────────────────────────────────────────────
--- JUDGING SCORES  (judge_id references judges.judge_id; score 0–10 decimal)
--- ─────────────────────────────────────────────────────────────────────────────
+-- ─── Judging scores ──────────────────────────────────────────────────
+-- Event 1 judging by judge 1 and 2
 INSERT INTO judging (event_id, judge_id, participant_id, score, comments) VALUES
--- Event 1 · Speed Programming — judges 1 & 3
-(1, 1,  1,  9.30, 'Excellent algorithmic thinking and clean solutions.'),
-(1, 3,  1,  9.10, 'Fast execution, minimal bugs.'),
-(1, 1,  2,  7.80, 'Good attempt; missed two edge cases.'),
-(1, 3,  2,  7.50, 'Solid fundamentals, speed needs work.'),
-(1, 1,  3,  8.70, 'Strong performance under pressure.'),
-(1, 3,  3,  8.90, 'Good optimisation strategies.'),
-(1, 1,  4,  8.40, 'Solid overall attempt.'),
-(1, 3,  4,  8.10, 'Minor edge-case issues.'),
-(1, 1,  5,  9.60, 'Outstanding result — fastest in the room.'),
-(1, 3,  5,  9.40, 'Very polished code quality.'),
-(1, 1,  6,  8.80, 'Consistent scoring across all problems.'),
-(1, 3,  6,  8.50, 'Good structured approach.'),
--- Event 2 · SOFTEC Hackathon — judges 1 & 4
-(2, 1,  16, 9.00, 'Compelling prototype with real-world application.'),
-(2, 4,  16, 9.20, 'Strong product direction and market fit.'),
-(2, 1,  17, 8.30, 'Creative idea; UX needs refinement.'),
-(2, 4,  17, 8.00, 'Good technical execution.'),
-(2, 1,  18, 8.70, 'Impressive scope for 36 hours.'),
-(2, 4,  18, 8.50, 'Well-architected backend.'),
--- Event 6 · Business Plan Showdown — judges 2 & 4
-(6, 2,  30, 8.60, 'Strong pitch and compelling market sizing.'),
-(6, 4,  30, 8.40, 'Good financials, needs more validation.'),
-(6, 2,  31, 7.90, 'Solid idea with realistic execution plan.'),
-(6, 4,  31, 7.70, 'Presentation was clear and confident.'),
--- Event 3 · AI Model Showdown — judges 5 & 7
-(3, 5,  26, 8.90, 'Impressive model accuracy and live demo.'),
-(3, 7,  26, 9.10, 'Very well prepared inference pipeline.'),
-(3, 5,  27, 8.20, 'Good model architecture choice.'),
-(3, 7,  27, 8.00, 'Needs more robustness testing.');
+(1, 1, 1,  8.50, 'Excellent speed and accuracy.'),
+(1, 1, 2,  7.80, 'Good approach, minor bugs.'),
+(1, 1, 3,  9.20, 'Fastest submission, clean code.'),
+(1, 1, 4,  6.50, 'Partial solution on hard problem.'),
+(1, 1, 5,  7.20, 'Solid performance.'),
+(1, 2, 1,  8.80, 'Very efficient solution.'),
+(1, 2, 2,  7.50, 'Good but could optimize more.'),
+(1, 2, 3,  9.00, 'Outstanding, top performer.'),
+(1, 2, 4,  6.00, 'Struggled with advanced problems.'),
+(1, 2, 5,  7.50, 'Consistent performance.'),
+-- Event 2 judging by judge 3 and 4
+(2, 3, 21, 8.00, 'Strong ML pipeline.'),
+(2, 3, 22, 7.50, 'Good presentation, average model.'),
+(2, 3, 23, 9.00, 'Innovative use of transformer models.'),
+(2, 4, 21, 8.20, 'Well-structured project.'),
+(2, 4, 22, 7.80, 'Solid baseline model.'),
+(2, 4, 23, 9.10, 'Best project of the day.'),
+-- Event 3 judging by judge 5 and 6
+(3, 5, 31, 7.80, 'Good business model.'),
+(3, 5, 32, 8.50, 'Very compelling pitch.'),
+(3, 5, 33, 7.20, 'Interesting idea, weak financials.'),
+(3, 6, 31, 7.60, 'Realistic market analysis.'),
+(3, 6, 32, 8.70, 'Best pitch of the competition.'),
+(3, 6, 33, 7.40, 'Creative solution.'),
+-- Event 5 judging by judge 1 and 3
+(5, 1, 41, 8.20, 'Great gameplay loop.'),
+(5, 1, 42, 7.90, 'Polished graphics.'),
+(5, 3, 41, 8.50, 'Excellent mechanics.'),
+(5, 3, 42, 8.10, 'Fun and engaging.');
 
--- ─────────────────────────────────────────────────────────────────────────────
--- TEAMS
--- ─────────────────────────────────────────────────────────────────────────────
+-- ─── Teams ───────────────────────────────────────────────────────────
 INSERT INTO teams (team_id, team_name, event_id, created_by) VALUES
-(1, 'ByteForce',      2, 7),
-(2, 'Solo Stack',     1, 11),
-(3, 'Pitch Perfect',  6, 17);
+(1, 'Team Alpha',  5, 41),
+(2, 'Team Beta',   5, 43),
+(3, 'Code Ninjas', 1, 21);
 
 INSERT INTO team_members (team_id, user_id, role) VALUES
-(1, 7,  'captain'),
-(1, 13, 'member'),
-(1, 14, 'member'),
-(2, 11, 'captain'),
-(3, 17, 'captain'),
-(3, 18, 'member');
+(1, 41, 'leader'), (1, 42, 'member'),
+(2, 43, 'leader'), (2, 44, 'member'),
+(3, 21, 'leader'), (3, 22, 'member'), (3, 23, 'member');
 
--- ─────────────────────────────────────────────────────────────────────────────
--- EVENT ROUNDS
--- ─────────────────────────────────────────────────────────────────────────────
-INSERT INTO event_rounds (event_id, round_type, round_date, venue_id, status) VALUES
-(1,  'Prelims',    '2026-05-28 10:00:00', 3, 'scheduled'),
-(1,  'Finals',     '2026-06-01 09:00:00', 3, 'scheduled'),
-(2,  'Prelims',    '2026-06-02 18:00:00', 1, 'scheduled'),
-(2,  'Semi-Finals','2026-06-03 12:00:00', 1, 'scheduled'),
-(2,  'Finals',     '2026-06-04 09:00:00', 1, 'scheduled'),
-(6,  'Prelims',    '2026-06-05 10:00:00', 1, 'scheduled'),
-(6,  'Finals',     '2026-06-06 14:00:00', 1, 'scheduled'),
-(11, 'Prelims',    '2026-06-10 14:00:00', 4, 'scheduled'),
-(11, 'Finals',     '2026-06-11 10:00:00', 4, 'scheduled');
+-- ─── Event rounds ────────────────────────────────────────────────────
+INSERT INTO event_rounds (event_id, round_type, round_date, venue_id) VALUES
+(1, 'Prelims',     '2026-06-15 09:00:00', 3),
+(1, 'Finals',      '2026-06-15 15:00:00', 3),
+(2, 'Prelims',     '2026-06-16 10:00:00', 2),
+(2, 'Finals',      '2026-06-16 15:00:00', 2),
+(3, 'Prelims',     '2026-06-15 10:00:00', 2),
+(3, 'Semi-Finals', '2026-06-15 13:00:00', 2),
+(3, 'Finals',      '2026-06-15 17:00:00', 2),
+(5, 'Custom',      '2026-06-14 09:00:00', 4),
+(9, 'Finals',      '2026-06-14 14:00:00', 1);
 
--- ─────────────────────────────────────────────────────────────────────────────
--- ACCOMMODATIONS
--- ─────────────────────────────────────────────────────────────────────────────
-INSERT INTO accommodations (accommodation_id, room_type, capacity, price_per_night, available_rooms) VALUES
-(1, 'Single', 1, 4500.00, 6),
-(2, 'Double', 2, 2500.00, 24),
-(3, 'Triple', 3, 2000.00, 15),
-(4, 'Quad',   4, 1500.00, 12);
+-- ─── Accommodations ──────────────────────────────────────────────────
+INSERT INTO accommodations (accommodation_id, venue_name, room_type, capacity, price_per_night, available_rooms) VALUES
+(1, 'FAST Hostel Block A', 'Single Room',   1, 1500.00, 20),
+(2, 'FAST Hostel Block A', 'Double Room',   2, 1000.00, 15),
+(3, 'FAST Hostel Block B', 'Dormitory',     6, 500.00,  8),
+(4, 'FAST Hostel Block B', 'Triple Room',   3, 800.00,  10);
 
-INSERT INTO user_accommodations (user_id, accommodation_id, booked_at, check_in, check_out) VALUES
-(7, 2, '2026-05-10 12:00:00', '2026-06-01', '2026-06-04'),
-(8, 2, '2026-05-10 13:00:00', '2026-06-01', '2026-06-04');
+INSERT INTO user_accommodations (user_id, accommodation_id, check_in, check_out) VALUES
+(41, 1, '2026-06-13', '2026-06-19'),
+(42, 2, '2026-06-14', '2026-06-18');
 
--- ─────────────────────────────────────────────────────────────────────────────
--- DERIVED COUNTS — keep event.registered_participants in sync
--- ─────────────────────────────────────────────────────────────────────────────
+-- ─── Sync derived counts ─────────────────────────────────────────────
 UPDATE events e
 SET registered_participants = (
   SELECT COUNT(*) FROM participants p WHERE p.event_id = e.event_id
 );
 
--- Keep sponsorship_total in sync with approved sponsorships
 UPDATE events e
 SET sponsorship_total = (
   SELECT COALESCE(SUM(s.amount), 0)
   FROM sponsorships s
-  WHERE s.event_id = e.event_id
-    AND s.status   = 'approved'
+  WHERE s.event_id = e.event_id AND s.status = 'confirmed'
 );
 
--- Keep judge assigned_events_count in sync
 UPDATE judges j
 SET assigned_events_count = (
   SELECT COUNT(*) FROM event_judges ej WHERE ej.judge_id = j.judge_id
 );
+
+SET FOREIGN_KEY_CHECKS = 1;

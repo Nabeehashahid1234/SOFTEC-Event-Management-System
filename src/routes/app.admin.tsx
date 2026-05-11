@@ -1,18 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useAuth } from "@/lib/auth";
-import { Navigate } from "@tanstack/react-router";
-import { AdminDashboard } from "@/components/AdminDashboard";
+import { createFileRoute, Navigate } from "@tanstack/react-router";
 
+// Admin functionality lives at /app/dashboard — redirect here
 export const Route = createFileRoute("/app/admin")({
-  component: AdminPage,
+  component: () => <Navigate to="/app/dashboard" />,
 });
-
-function AdminPage() {
-  const { user } = useAuth();
-
-  if (!user || (user.role !== "admin" && user.role !== "organizer")) {
-    return <Navigate to="/app/dashboard" />;
-  }
-
-  return <AdminDashboard />;
-}

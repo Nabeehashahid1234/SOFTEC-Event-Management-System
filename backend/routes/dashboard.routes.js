@@ -82,10 +82,11 @@ router.get("/admin", authRequired, async (_req, res, next) => {
   }
 });
 
+// Legacy routes kept for compatibility — real approval is at /api/sponsorships/:id/confirm|reject
 router.put("/admin/sponsors/:id/approve", authRequired, async (req, res, next) => {
   try {
     const { id } = req.params;
-    await pool.query("UPDATE sponsorships SET status = 'approved' WHERE sponsorship_id = ?", [id]);
+    await pool.query("UPDATE sponsorships SET status = 'confirmed' WHERE sponsorship_id = ?", [id]);
     res.json({ success: true });
   } catch (err) {
     return next(err);
@@ -253,7 +254,7 @@ router.get("/sponsor", authRequired, async (req, res, next) => {
 
     const sponsorId = sponsorInfo.sponsor_id;
     const [sponsoredEvents] = await pool.query(
-      `SELECT e.event_id, e.event_name, e.category, e.event_date, COUNT(DISTINCT p.participant_id) AS participants_reached, COALESCE(SUM(CASE WHEN sp.status = 'approved' THEN sp.amount ELSE 0 END), 0) AS sponsorship_contribution FROM sponsorships sp JOIN events e ON sp.event_id = e.event_id LEFT JOIN participants p ON p.event_id = e.event_id WHERE sp.sponsor_id = ? GROUP BY e.event_id, e.event_name, e.category, e.event_date ORDER BY e.event_date DESC`,
+      `SELECT e.event_id, e.event_name, e.category, e.event_date, COUNT(DISTINCT p.participant_id) AS participants_reached, COALESCE(SUM(CASE WHEN sp.status = 'confirmed' THEN sp.amount ELSE 0 END), 0) AS sponsorship_contribution FROM sponsorships sp JOIN events e ON sp.event_id = e.event_id LEFT JOIN participants p ON p.event_id = e.event_id WHERE sp.sponsor_id = ? GROUP BY e.event_id, e.event_name, e.category, e.event_date ORDER BY e.event_date DESC`,
       [sponsorId]
     );
     const [payments] = await pool.query(
@@ -264,9 +265,9 @@ router.get("/sponsor", authRequired, async (req, res, next) => {
       `SELECT sp.sponsorship_id, e.event_name, sp.amount, sp.status, sp.created_at, sp.approved_at, sp.rejection_reason, sp.admin_notes FROM sponsorships sp LEFT JOIN events e ON sp.event_id = e.event_id WHERE sp.sponsor_id = ? ORDER BY sp.created_at DESC`,
       [sponsorId]
     );
-    const [[{ total_contribution }]] = await pool.query("SELECT COALESCE(SUM(amount), 0) AS total_contribution FROM sponsorships WHERE sponsor_id = ? AND status = 'approved'", [sponsorId]);
-    const [[{ events_sponsored }]] = await pool.query("SELECT COUNT(DISTINCT event_id) AS events_sponsored FROM sponsorships WHERE sponsor_id = ? AND status = 'approved'", [sponsorId]);
-    const [[{ total_reach }]] = await pool.query("SELECT COALESCE(COUNT(DISTINCT p.participant_id), 0) AS total_reach FROM sponsorships sp LEFT JOIN participants p ON p.event_id = sp.event_id WHERE sp.sponsor_id = ? AND sp.status = 'approved'", [sponsorId]);
+    const [[{ total_contribution }]] = await pool.query("SELECT COALESCE(SUM(amount), 0) AS total_contribution FROM sponsorships WHERE sponsor_id = ? AND status = 'confirmed'", [sponsorId]);
+    const [[{ events_sponsored }]] = await pool.query("SELECT COUNT(DISTINCT event_id) AS events_sponsored FROM sponsorships WHERE sponsor_id = ? AND status = 'confirmed'", [sponsorId]);
+    const [[{ total_reach }]] = await pool.query("SELECT COALESCE(COUNT(DISTINCT p.participant_id), 0) AS total_reach FROM sponsorships sp LEFT JOIN participants p ON p.event_id = sp.event_id WHERE sp.sponsor_id = ? AND sp.status = 'confirmed'", [sponsorId]);
 
     return res.json({ success: true, data: { sponsorInfo, sponsoredEvents, payments, history, stats: { total_contribution, events_sponsored, total_reach } } });
   } catch (err) {
