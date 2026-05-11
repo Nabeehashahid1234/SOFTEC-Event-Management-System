@@ -69,7 +69,7 @@ function EventDetail() {
           <Link to="/" className="font-display text-xl font-semibold">SOFTEC<span className="text-primary">.</span></Link>
           <div className="flex items-center gap-3">
             <ThemeSwitch />
-            <Link to="/events" className="text-sm text-muted-foreground hover:text-primary inline-flex items-center gap-1.5"><ArrowLeft className="h-3.5 w-3.5"/> All programmes</Link>
+            <Link to={user && (user.role === "participant" || user.role === "organizer" || user.role === "judge") ? "/app/events" : "/events"} className="text-sm text-muted-foreground hover:text-primary inline-flex items-center gap-1.5"><ArrowLeft className="h-3.5 w-3.5"/> All programmes</Link>
           </div>
         </div>
       </header>
