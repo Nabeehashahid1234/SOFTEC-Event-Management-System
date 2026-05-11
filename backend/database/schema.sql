@@ -234,6 +234,7 @@ CREATE TABLE payments (
   INDEX idx_payments_type      (payment_type)
 ) ENGINE=InnoDB;
 
+
 CREATE TABLE sponsors (
   sponsor_id        INT AUTO_INCREMENT PRIMARY KEY,
   user_id           INT           NULL,

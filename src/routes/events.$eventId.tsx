@@ -307,6 +307,7 @@ function Row({ label, value, accent }: { label: string; value: string; accent?: 
   );
 }
 
+// CapacityRing component that visually represents the filled capacity of an event using a circular progress ring. It calculates the percentage of filled capacity and uses SVG to create a ring with a stroke offset to indicate the filled portion. The percentage is displayed in the center of the ring, along with numeric values for filled and total capacity.
 // A circular progress ring that visually represents the percentage of filled capacity for the event, along with numeric values for filled and total capacity. It uses SVG to create the ring and applies a stroke offset to indicate the filled portion. The percentage is also displayed in the center of the ring, with a label below it.
 function CapacityRing({ filled, total }: { filled: number; total: number }) {
   const pct = total > 0 ? Math.min(100, (filled / total) * 100) : 0;
