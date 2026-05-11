@@ -35,16 +35,16 @@ function EventDetail() {
   const [, force] = useState(0);
 
   useEffect(() => {
-    console.log("[EventDetail] RENDER", {
+    console.log("[EventDetail] PAGE MOUNTED", {
       eventId,
       user: user?.role,
       isLoading,
       isError,
       eventExists: !!event,
+      eventName: event?.name,
       showRegistrationForm,
-      regData: regData ? { registered: regData.registered } : null,
     });
-  }, [eventId, user, isLoading, isError, event, showRegistrationForm, regData]);
+  }, [eventId, user, isLoading, isError, event, showRegistrationForm]);
 
   useEffect(() => {
     const id = setInterval(() => force(n => n + 1), 60000);
