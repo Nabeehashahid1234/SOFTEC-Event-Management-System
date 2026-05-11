@@ -19,6 +19,7 @@ async function main() {
     { name: 'seed.sql', description: 'Initial data' }
   ];
 
+  // make sure we're in the backend directory when running this script, so relative paths to database files work correctly
   // Resolve the path to the database directory
   const databaseDir = path.resolve(__dirname, "../database");
 
@@ -49,6 +50,7 @@ async function main() {
 
   const hasExistingTables = tableCountRows[0].count > 0;
 
+  // Log the number of existing tables for clarity
   console.log(`Database has ${tableCountRows[0].count} existing tables.`);
 
   if (hasExistingTables) {
