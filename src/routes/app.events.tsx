@@ -51,7 +51,7 @@ function JudgeEventsView() {
           {assigned.map((ev: any) => (
             <Link
               key={ev.event_id}
-              to="/events/$eventId"
+              to="/app/events/$eventId"
               params={{ eventId: String(ev.event_id) }}
               className="flex items-center gap-5 p-5 hover:bg-muted/30 transition-colors group"
             >
@@ -160,7 +160,7 @@ function AllEventsView() {
         {list.map(e => (
           <Link
             key={e.id}
-            to="/events/$eventId"
+            to="/app/events/$eventId"
             params={{ eventId: e.id }}
             className="flex items-center gap-5 p-5 hover:bg-muted/30 transition-colors group"
           >
