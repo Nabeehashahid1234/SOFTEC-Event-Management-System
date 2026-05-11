@@ -189,6 +189,24 @@ router.get("/judge", authRequired, async (req, res, next) => {
       `SELECT e.event_id, e.event_name, e.category, e.event_date, v.venue_name, COUNT(DISTINCT er.round_id) AS total_rounds, COUNT(DISTINCT p.participant_id) AS participant_count FROM event_judges ej JOIN events e ON ej.event_id = e.event_id LEFT JOIN venues v ON v.venue_id = e.venue_id LEFT JOIN event_rounds er ON er.event_id = e.event_id LEFT JOIN participants p ON p.event_id = e.event_id WHERE ej.judge_id = ? GROUP BY e.event_id, e.event_name, e.category, e.event_date, v.venue_name ORDER BY e.event_date ASC`,
       [judge.judge_id]
     );
+    // Individual participants for the judge to see who they need to evaluate
+    const [judgeParticipants] = await pool.query(
+      `
+      SELECT
+        p.participant_id, p.event_id, p.registration_date,
+        u.name AS participant_name, u.email AS participant_email,
+        CASE WHEN jg.judging_id IS NOT NULL THEN 'scored' ELSE 'pending' END AS judging_status,
+        jg.score, jg.comments
+      FROM event_judges ej
+      JOIN events e ON ej.event_id = e.event_id
+      JOIN participants p ON p.event_id = e.event_id
+      JOIN users u ON u.user_id = p.user_id
+      LEFT JOIN judging jg ON jg.participant_id = p.participant_id AND jg.event_id = e.event_id AND jg.judge_id = ej.judge_id
+      WHERE ej.judge_id = ?
+      ORDER BY e.event_id ASC, judging_status DESC, u.name ASC
+      `,
+      [judge.judge_id]
+    );
     const [submitted] = await pool.query(
       `SELECT jg.judging_id, e.event_id, e.event_name, p.participant_id, u.name AS participant_name, jg.score, jg.comments, jg.judged_at FROM judging jg JOIN participants p ON jg.participant_id = p.participant_id JOIN users u ON p.user_id = u.user_id JOIN events e ON jg.event_id = e.event_id WHERE jg.judge_id = ? ORDER BY jg.judged_at DESC LIMIT 20`,
       [judge.judge_id]
@@ -208,7 +226,7 @@ router.get("/judge", authRequired, async (req, res, next) => {
       [judge.judge_id]
     );
 
-    return res.json({ success: true, data: { assigned, submitted, pending, leaderboard, stats: { assigned_count, submitted_count, pending_count } } });
+    return res.json({ success: true, data: { assigned, submitted, pending, leaderboard, participants: judgeParticipants, stats: { assigned_count, submitted_count, pending_count } } });
   } catch (err) {
     return next(err);
   }
@@ -233,6 +251,23 @@ router.get("/organizer", authRequired, async (req, res, next) => {
       `SELECT v.venue_id, v.venue_name, COUNT(DISTINCT e.event_id) AS total_rounds FROM events e JOIN venues v ON e.venue_id = v.venue_id JOIN events other_event ON other_event.venue_id = e.venue_id AND other_event.event_date = e.event_date AND other_event.event_id <> e.event_id WHERE e.organizer_id = ? GROUP BY v.venue_id, v.venue_name ORDER BY total_rounds DESC LIMIT 10`,
       [userId]
     );
+    // All registrations for this organizer's events — used to show participant list per event
+    const [participants] = await pool.query(
+      `
+      SELECT
+        p.participant_id, p.event_id, p.registration_date,
+        u.user_id, u.name AS participant_name, u.email AS participant_email,
+        COALESCE(py.status, 'pending') AS payment_status,
+        py.amount
+      FROM participants p
+      JOIN events e ON e.event_id = p.event_id
+      JOIN users u ON u.user_id = p.user_id
+      LEFT JOIN payments py ON py.user_id = p.user_id AND py.event_id = p.event_id AND py.payment_type = 'registration'
+      WHERE e.organizer_id = ?
+      ORDER BY p.event_id ASC, p.registration_date DESC
+      `,
+      [userId]
+    );
     const [[{ total_events }]] = await pool.query("SELECT COUNT(*) AS total_events FROM events WHERE organizer_id = ?", [userId]);
     const [[{ total_registrations }]] = await pool.query("SELECT COUNT(DISTINCT p.participant_id) AS total_registrations FROM events e LEFT JOIN participants p ON p.event_id = e.event_id WHERE e.organizer_id = ?", [userId]);
     const [[{ avg_fill_rate }]] = await pool.query(
@@ -240,7 +275,7 @@ router.get("/organizer", authRequired, async (req, res, next) => {
       [userId]
     );
 
-    return res.json({ success: true, data: { events, judges, rounds, venueConflicts, stats: { total_events, total_registrations, avg_fill_rate } } });
+    return res.json({ success: true, data: { events, judges, rounds, venueConflicts, participants, stats: { total_events, total_registrations, avg_fill_rate } } });
   } catch (err) {
     return next(err);
   }
