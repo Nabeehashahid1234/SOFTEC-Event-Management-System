@@ -19,6 +19,7 @@ async function main() {
     { name: 'seed.sql', description: 'Initial data' }
   ];
 
+  // Resolve the path to the database directory
   const databaseDir = path.resolve(__dirname, "../database");
 
   // Check if all required SQL files exist
