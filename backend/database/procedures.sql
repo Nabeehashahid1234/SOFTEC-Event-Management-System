@@ -91,7 +91,7 @@ BEGIN
     SELECT COALESCE(SUM(s.amount), 0) AS total
     FROM   sponsorships s
     WHERE  s.event_id = p_event_id
-      AND  s.status   = 'approved'
+      AND  s.status   = 'confirmed'
   ) totals ON 1 = 1
   SET e.sponsorship_total = totals.total,
       e.updated_at        = CURRENT_TIMESTAMP

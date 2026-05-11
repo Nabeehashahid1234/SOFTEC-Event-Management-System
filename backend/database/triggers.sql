@@ -106,7 +106,7 @@ BEGIN
            SELECT COALESCE(SUM(amount), 0)
            FROM   sponsorships
            WHERE  event_id = NEW.event_id
-             AND  status   = 'approved'
+             AND  status   = 'confirmed'
          )
   WHERE  event_id = NEW.event_id;
 END//
