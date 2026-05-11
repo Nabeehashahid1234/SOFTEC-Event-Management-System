@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { api, AUTH_TOKEN_KEY } from "@/lib/api";
 
 export function useMyRegistration(eventId: string | number) {
   return useQuery({
@@ -12,7 +12,9 @@ export function useMyRegistration(eventId: string | number) {
         registration: data?.registration || null,
       } as { registered: boolean; registration: any | null };
     },
-    enabled: Boolean(eventId),
+    enabled: Boolean(eventId) && Boolean(localStorage.getItem(AUTH_TOKEN_KEY)),
+    retry: 1,
+    staleTime: 30_000,
   });
 }
 

@@ -295,6 +295,7 @@ function OrganizerDash({ data }: { data: any }) {
   const judges        = Array.isArray(data.judges)        ? data.judges        : [];
   const rounds        = Array.isArray(data.rounds)        ? data.rounds        : [];
   const venueConflicts = Array.isArray(data.venueConflicts) ? data.venueConflicts : [];
+  const allParticipants = Array.isArray(data.participants) ? data.participants : [];
   const stats         = data.stats || {};
 
   return (
@@ -365,6 +366,46 @@ function OrganizerDash({ data }: { data: any }) {
         )}
       </Section>
 
+      {/* Participant registrations per event */}
+      <Section title="Registered Participants">
+        {allParticipants.length === 0 ? (
+          <EmptyState icon={Users} title="No registrations yet" desc="Participants who register for your events will appear here." />
+        ) : (
+          <div className="rounded-lg border border-border bg-card overflow-hidden">
+            <div className="grid grid-cols-12 px-4 py-2.5 bg-muted/40 border-b border-border font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+              <div className="col-span-4">Participant</div>
+              <div className="col-span-4">Event</div>
+              <div className="col-span-2">Registered</div>
+              <div className="col-span-2 text-right">Payment</div>
+            </div>
+            {allParticipants.slice(0, 20).map((p: any) => (
+              <div key={p.participant_id} className="grid grid-cols-12 px-4 py-3 border-b border-border last:border-0 items-center text-sm">
+                <div className="col-span-4 min-w-0">
+                  <p className="font-medium truncate">{p.participant_name}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">{p.participant_email}</p>
+                </div>
+                <div className="col-span-4 min-w-0">
+                  <p className="text-muted-foreground text-xs truncate">
+                    {events.find((e: any) => e.event_id === p.event_id)?.event_name || `Event #${p.event_id}`}
+                  </p>
+                </div>
+                <div className="col-span-2 font-mono text-[11px] text-muted-foreground">{fmtDate(p.registration_date)}</div>
+                <div className="col-span-2 text-right">
+                  <Pill tone={p.payment_status === "completed" ? "sage" : p.payment_status === "failed" ? "rose" : "gold"}>
+                    {p.payment_status}
+                  </Pill>
+                </div>
+              </div>
+            ))}
+            {allParticipants.length > 20 && (
+              <div className="px-4 py-3 text-center text-xs text-muted-foreground border-t border-border">
+                Showing 20 of {allParticipants.length} registrations
+              </div>
+            )}
+          </div>
+        )}
+      </Section>
+
       <div className="grid md:grid-cols-2 gap-6">
         {/* Judges */}
         <Section title="Assigned Judges">
@@ -425,6 +466,7 @@ function JudgeDash({ data }: { data: any }) {
   const submitted = Array.isArray(data.submitted) ? data.submitted : [];
   const pending   = Array.isArray(data.pending)   ? data.pending   : [];
   const leaderboard = Array.isArray(data.leaderboard) ? data.leaderboard : [];
+  const judgeParticipants = Array.isArray(data.participants) ? data.participants : [];
   const stats     = data.stats || {};
 
   return (
@@ -528,6 +570,46 @@ function JudgeDash({ data }: { data: any }) {
                 ))}
               </tbody>
             </table>
+          </div>
+        </Section>
+      )}
+
+      {/* Participant list for the judge */}
+      {judgeParticipants.length > 0 && (
+        <Section title="Participants to Evaluate">
+          <div className="rounded-lg border border-border bg-card overflow-hidden">
+            <div className="grid grid-cols-12 px-4 py-2.5 bg-muted/40 border-b border-border font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+              <div className="col-span-4">Participant</div>
+              <div className="col-span-4">Event</div>
+              <div className="col-span-2">Registered</div>
+              <div className="col-span-2 text-right">Status</div>
+            </div>
+            {judgeParticipants.slice(0, 20).map((p: any) => (
+              <div key={`${p.participant_id}-${p.event_id}`} className="grid grid-cols-12 px-4 py-3 border-b border-border last:border-0 items-center text-sm">
+                <div className="col-span-4 min-w-0">
+                  <p className="font-medium truncate">{p.participant_name}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">{p.participant_email}</p>
+                </div>
+                <div className="col-span-4 min-w-0">
+                  <p className="text-muted-foreground text-xs truncate">
+                    {assigned.find((e: any) => e.event_id === p.event_id)?.event_name || `Event #${p.event_id}`}
+                  </p>
+                </div>
+                <div className="col-span-2 font-mono text-[11px] text-muted-foreground">{fmtDate(p.registration_date)}</div>
+                <div className="col-span-2 text-right">
+                  {p.judging_status === "scored" ? (
+                    <Pill tone="sage">Scored {Number(p.score || 0).toFixed(1)}</Pill>
+                  ) : (
+                    <Pill tone="rose">Pending</Pill>
+                  )}
+                </div>
+              </div>
+            ))}
+            {judgeParticipants.length > 20 && (
+              <div className="px-4 py-3 text-center text-xs text-muted-foreground border-t border-border">
+                Showing 20 of {judgeParticipants.length} participants
+              </div>
+            )}
           </div>
         </Section>
       )}
@@ -892,6 +974,23 @@ function AdminDash({ data }: { data: any }) {
               </div>
             ))}
           </div>
+        </Section>
+      )}
+
+      {/* Payment + Pass overview */}
+      {paymentStatus.length > 0 && (
+        <Section title="Payment Overview">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {paymentStatus.map((ps: any) => (
+              <div key={ps.status} className="rounded-lg border border-border bg-card p-4 text-center">
+                <p className="font-display text-3xl font-semibold tabular">{ps.count}</p>
+                <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground mt-1">{ps.status}</p>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground mt-3">
+            Passes are auto-generated when a registration payment is confirmed. Passes for free events are issued immediately on registration.
+          </p>
         </Section>
       )}
 

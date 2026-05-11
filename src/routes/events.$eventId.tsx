@@ -66,7 +66,7 @@ function EventDetail() {
         <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-3 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground tabular border-y border-border py-4">
           <span className="inline-flex items-center gap-2"><Calendar className="h-3.5 w-3.5"/> {fmtDate(event.date)} · {fmtTime(event.date)}</span>
           <span className="inline-flex items-center gap-2"><MapPin className="h-3.5 w-3.5"/> {event.venueName}</span>
-          <span className="inline-flex items-center gap-2"><Users className="h-3.5 w-3.5"/> {event.registered}/{event.capacity}</span>
+          <span className="inline-flex items-center gap-2"><Users className="h-3.5 w-3.5"/> {event.registered}/{event.capacity || "∞"}</span>
           <span className="text-primary">{event.fee === 0 ? "Free entry" : fmtPKR(event.fee)}</span>
         </div>
       </section>
@@ -250,7 +250,7 @@ function RegisterButton({ user, event, regData, regLoading, register, unregister
     );
   }
 
-  const isFull = event.registered >= event.capacity;
+  const isFull = event.capacity > 0 && event.registered >= event.capacity;
 
   if (showRegistrationForm && !isFull) {
     return (
@@ -308,7 +308,7 @@ function Row({ label, value, accent }: { label: string; value: string; accent?: 
 }
 
 function CapacityRing({ filled, total }: { filled: number; total: number }) {
-  const pct = Math.min(100, (filled / total) * 100);
+  const pct = total > 0 ? Math.min(100, (filled / total) * 100) : 0;
   const r = 42, c = 2 * Math.PI * r;
   return (
     <div className="flex items-center gap-5">
@@ -320,7 +320,7 @@ function CapacityRing({ filled, total }: { filled: number; total: number }) {
       </svg>
       <div>
         <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Capacity</p>
-        <p className="font-display text-2xl font-semibold tabular mt-1">{filled} <span className="text-muted-foreground text-base">/ {total}</span></p>
+        <p className="font-display text-2xl font-semibold tabular mt-1">{filled} <span className="text-muted-foreground text-base">/ {total || "∞"}</span></p>
       </div>
     </div>
   );
