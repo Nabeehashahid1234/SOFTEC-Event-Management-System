@@ -5,7 +5,7 @@ const { authRequired } = require("../middleware/auth");
 const { requireRole } = require("../middleware/rbac");
 
 const router = express.Router();
-
+// hey new commit
 router.get("/events/:id/my-registration", authRequired, [param("id").isInt()], async (req, res, next) => {
   try {
     const errors = validationResult(req);
