@@ -29,15 +29,31 @@ async function assignLeastBusyJudge(connection, eventId) {
 
 router.get(
   "/",
-  [query("category").optional().isString(), query("from").optional().isISO8601(), query("to").optional().isISO8601()],
+  [query("category").optional().isString(), query("from").optional().isISO8601(), query("to").optional().isISO8601(), query("mine").optional().isIn(["true", "false"])],
   async (req, res, next) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) return res.status(400).json({ success: false, error: "Invalid filters" });
 
-      const { category, from, to } = req.query;
+      const { category, from, to, mine } = req.query;
       const where = [];
       const params = [];
+
+      // ?mine=true: only return events where the requester is the organizer (requires auth header)
+      if (mine === "true") {
+        const jwt = require("jsonwebtoken");
+        const authHeader = req.headers.authorization || "";
+        const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+        if (token) {
+          try {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            where.push("e.organizer_id = ?");
+            params.push(decoded.user_id || decoded.id);
+          } catch {
+            // invalid token — ignore filter, return all events
+          }
+        }
+      }
 
       if (category) {
         where.push("e.category = ?");

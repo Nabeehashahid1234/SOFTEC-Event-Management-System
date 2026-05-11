@@ -1,26 +1,20 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
-import { AxiosError } from "axios";
-
-interface DashboardState {
-  loading: boolean;
-  error: string | null;
-  data: any;
-}
+import type { AxiosError } from "axios";
 
 function fallbackDashboard(role?: string) {
   if (role === "admin") {
-    return { kpi: {}, roleDistribution: [], categoryDistribution: [], venueUtilization: [], topPrograms: [], revenueBreakdown: [], pendingSponsorships: [], sponsorshipHistory: [], recentActivity: [], paymentStatus: [] };
+    return { kpi: {}, roleDistribution: [], categoryDistribution: [], venueUtilization: [], topPrograms: [], revenueBreakdown: [], pendingSponsorships: [], sponsorshipHistory: [], recentActivity: [], paymentStatus: [], allEvents: [] };
   }
   if (role === "participant") {
     return { myEvents: [], upcomingEvents: [], payments: [], accommodation: [], teams: [], passes: [], leaderboards: [], stats: {} };
   }
   if (role === "organizer") {
-    return { events: [], judges: [], rounds: [], venueConflicts: [], stats: {} };
+    return { events: [], judges: [], rounds: [], venueConflicts: [], participants: [], stats: {} };
   }
   if (role === "judge") {
-    return { assigned: [], submitted: [], pending: [], leaderboard: [], stats: {} };
+    return { assigned: [], submitted: [], pending: [], leaderboard: [], participants: [], stats: {} };
   }
   if (role === "sponsor") {
     return { sponsorInfo: null, sponsoredEvents: [], payments: [], history: [], stats: {} };
@@ -28,63 +22,45 @@ function fallbackDashboard(role?: string) {
   return {};
 }
 
+const ENDPOINTS: Record<string, string> = {
+  admin:       "/dashboard/admin",
+  participant: "/dashboard/participant",
+  organizer:   "/dashboard/organizer",
+  judge:       "/dashboard/judge",
+  sponsor:     "/dashboard/sponsor",
+};
+
 export function useDashboard() {
   const { user, loading: authLoading } = useAuth();
-  const [state, setState] = useState<DashboardState>({
-    loading: true,
-    error: null,
-    data: null,
+
+  const { isLoading, error, data } = useQuery({
+    queryKey: ["dashboard", user?.role],
+    queryFn: async () => {
+      if (!user) return fallbackDashboard();
+      const endpoint = ENDPOINTS[user.role];
+      if (!endpoint) throw new Error(`Unknown role: ${user.role}`);
+
+      const response = await api.get(endpoint);
+      if (response.data.success) {
+        return response.data.data ?? fallbackDashboard(user.role);
+      }
+      throw new Error(response.data.error || "Failed to load dashboard");
+    },
+    enabled: !authLoading && Boolean(user),
+    staleTime: 30_000,
+    gcTime: 60_000,
+    retry: 1,
   });
 
-  useEffect(() => {
-    if (authLoading || !user) {
-      setState({ loading: true, error: null, data: null });
-      return;
-    }
+  const errorMessage = error
+    ? error instanceof Error
+      ? error.message
+      : ((error as AxiosError<any>)?.response?.data?.error ?? "Failed to load dashboard")
+    : null;
 
-    const fetchDashboard = async () => {
-      try {
-        setState({ loading: true, error: null, data: null });
-
-        let endpoint = "";
-        switch (user.role) {
-          case "admin":
-            endpoint = "/dashboard/admin";
-            break;
-          case "participant":
-            endpoint = "/dashboard/participant";
-            break;
-          case "organizer":
-            endpoint = "/dashboard/organizer";
-            break;
-          case "judge":
-            endpoint = "/dashboard/judge";
-            break;
-          case "sponsor":
-            endpoint = "/dashboard/sponsor";
-            break;
-          default:
-            throw new Error(`Unknown role: ${user.role}`);
-        }
-
-        const response = await api.get(endpoint);
-        if (response.data.success) {
-          setState({ loading: false, error: null, data: response.data.data || fallbackDashboard(user.role) });
-        } else {
-          setState({ loading: false, error: response.data.error || "Failed to load dashboard", data: fallbackDashboard(user.role) });
-        }
-      } catch (err) {
-        const message = err instanceof AxiosError
-          ? err.response?.data?.error || err.message
-          : err instanceof Error
-          ? err.message
-          : "Failed to load dashboard";
-        setState({ loading: false, error: message, data: fallbackDashboard(user.role) });
-      }
-    };
-
-    fetchDashboard();
-  }, [user, authLoading]);
-
-  return state;
+  return {
+    loading: isLoading,
+    error: errorMessage,
+    data: data ?? null,
+  };
 }

@@ -14,7 +14,13 @@
       "Bash(echo \"\" > \"D:\\\\github\\\\SOFTEC-Event-Management-System\\\\src\\\\hooks\\\\useAdminDashboard.ts\")",
       "Bash(powershell -Command \"\\(Get-Content 'backend\\\\database\\\\seed.sql'\\) -replace \\\\\"'approved'\\\\\", \\\\\"'confirmed'\\\\\" | Set-Content 'backend\\\\database\\\\seed.sql'\")",
       "Bash(powershell -Command \"\\(Get-Content 'D:\\\\github\\\\SOFTEC-Event-Management-System\\\\backend\\\\database\\\\seed.sql'\\) -replace \\\\\"'approved'\\\\\", \\\\\"'confirmed'\\\\\" | Set-Content 'D:\\\\github\\\\SOFTEC-Event-Management-System\\\\backend\\\\database\\\\seed.sql'\")",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(node -e ' *)",
+      "Bash(cmd /c \"cd /d D:\\\\github\\\\SOFTEC-Event-Management-System && npx tsc --noEmit --skipLibCheck 2>&1\")",
+      "Bash(node \"D:/github/SOFTEC-Event-Management-System/node_modules/.bin/tsc\" --noEmit --skipLibCheck --project \"D:/github/SOFTEC-Event-Management-System/tsconfig.json\")",
+      "Bash(node \"D:/github/SOFTEC-Event-Management-System/node_modules/typescript/bin/tsc\" --noEmit --skipLibCheck --project \"D:/github/SOFTEC-Event-Management-System/tsconfig.json\")",
+      "Bash(node node_modules/typescript/bin/tsc --noEmit --skipLibCheck)",
+      "Bash(node node_modules/typescript/bin/tsc --noEmit --skipLibCheck --project tsconfig.json)"
     ]
   }
 }

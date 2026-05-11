@@ -29,6 +29,7 @@ export function useRegisterEvent() {
       qc.invalidateQueries({ queryKey: ["my-registration", String(eventId)] });
       qc.invalidateQueries({ queryKey: ["event", String(eventId)] });
       qc.invalidateQueries({ queryKey: ["events"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }
@@ -44,6 +45,7 @@ export function useUnregisterEvent() {
       qc.invalidateQueries({ queryKey: ["my-registration", String(eventId)] });
       qc.invalidateQueries({ queryKey: ["event", String(eventId)] });
       qc.invalidateQueries({ queryKey: ["events"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }

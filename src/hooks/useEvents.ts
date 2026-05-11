@@ -74,12 +74,13 @@ function mapEvent(row: any): UiEvent {
   };
 }
 
-export function useEvents(filters?: { category?: UiCategory }) {
+export function useEvents(filters?: { category?: UiCategory; mine?: boolean }) {
   return useQuery({
     queryKey: ["events", filters],
     queryFn: async () => {
       const params: any = {};
       if (filters?.category) params.category = dbCategoryMap[filters.category];
+      if (filters?.mine)     params.mine = "true";
       const res = await api.get("/events", { params });
       return asArray(res.data?.data).map(mapEvent) as UiEvent[];
     },
