@@ -33,7 +33,7 @@ async function main() {
     );
   }
   // Connect to the database
-
+// standard connection code using mysql2/promise, with error handling and logging. It checks if the database already has tables to warn about potential issues with applying schema.sql, and provides detailed logging for each step of the migration process.
   const connection = await mysql.createConnection({
     host: process.env.DB_HOST,
     port: Number(process.env.DB_PORT || 3306),
