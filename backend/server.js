@@ -16,12 +16,12 @@ const missingEnv = REQUIRED_ENV.filter((key) => !process.env[key]);
 let dbReady = false;
 
 app.use(helmet());
-// app.use(cors({ origin: process.env.FRONTEND_URL || "http://localhost:5173" }));
+app.use(cors({ origin: process.env.FRONTEND_URL || "http://localhost:5173" }));
 // console.log("CORS origin:", process.env.FRONTEND_URL || "http://localhost:5173");
 app.use(express.json());
 app.use(cors({ 
-  origin: process.env.FRONTEND_URL || "http://localhost:5173",
-  credentials: true
+  origin: '*',
+  credentials: false
 }));
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
