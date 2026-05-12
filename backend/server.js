@@ -14,15 +14,15 @@ const PORT = Number(process.env.PORT || 5000);
 const REQUIRED_ENV = ["DB_HOST", "DB_USER", "DB_NAME", "JWT_SECRET"];
 const missingEnv = REQUIRED_ENV.filter((key) => !process.env[key]);
 let dbReady = false;
-
-app.use(helmet());
-// app.use(cors({ origin: process.env.FRONTEND_URL || "http://localhost:5173" }));
-// console.log("CORS origin:", process.env.FRONTEND_URL || "http://localhost:5173");
-app.use(express.json());
 app.use(cors({ 
   origin: '*',
   credentials: false
 }));
+app.use(helmet());
+// app.use(cors({ origin: process.env.FRONTEND_URL || "http://localhost:5173" }));
+// console.log("CORS origin:", process.env.FRONTEND_URL || "http://localhost:5173");
+app.use(express.json());
+
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
