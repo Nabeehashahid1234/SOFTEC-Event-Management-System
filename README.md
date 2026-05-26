@@ -1,261 +1,282 @@
+<div align="center">
+
 # SOFTEC Event Management System
 
-> A comprehensive event management platform for organizing technology events with participant registration, judging, sponsorships, and analytics.
+### Engineering Smart & Scalable Technology Event Operations
 
-**Status**: ✅ Production-Ready Backend | ⏳ Frontend Integration in Progress
+A modern full-stack event management platform built to streamline technology competitions, hackathons, conferences, registrations, judging workflows, sponsorship management, and analytics through a scalable and production-oriented architecture.
 
-## 📚 Quick Links
+<br>
 
-### Getting Started
+![Backend](https://img.shields.io/badge/Backend-Production_Ready-16a34a?style=for-the-badge)
+![Frontend](https://img.shields.io/badge/Frontend-Integration_In_Progress-f59e0b?style=for-the-badge)
+![Architecture](https://img.shields.io/badge/Architecture-Scalable-blue?style=for-the-badge)
+![License](https://img.shields.io/badge/License-MIT-black?style=for-the-badge)
 
-- **[PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md)** - Complete project overview and architecture
-- **[TESTING_AND_DEPLOYMENT.md](TESTING_AND_DEPLOYMENT.md)** - Setup and testing guide
-
-### Backend Documentation
-
-- **[SCHEMA_MIGRATION.md](SCHEMA_MIGRATION.md)** - Database schema redesign (complete guide)
-- **[BACKEND_API_REFERENCE.md](BACKEND_API_REFERENCE.md)** - Full API endpoint documentation
-- **Backend Setup**: See `backend/README.md` or PROJECT_OVERVIEW.md
-
-### Frontend Documentation
-
-- **[FRONTEND_INTEGRATION_GUIDE.md](FRONTEND_INTEGRATION_GUIDE.md)** - Frontend migration to new schema
-- **Frontend Setup**: See root `package.json`
+</div>
 
 ---
 
-## 🚀 Quick Start
+# Overview
 
-### 1. Backend Setup (5 minutes)
+The **SOFTEC Event Management System** is a comprehensive platform designed to manage large-scale technology events with efficiency, scalability, and role-based operational control.
 
-```bash
-cd backend
-npm install
-npm run setup:db        # Create database
-npm run validate:schema # Verify schema
-npm run dev            # Start server (http://localhost:5000)
-```
+The system centralizes:
 
-### 2. Frontend Setup (5 minutes)
+- Event Management
+- Participant Registration
+- Team Coordination
+- Judge Assignment & Evaluation
+- Sponsorship Tracking
+- Accommodation Management
+- Analytics & Dashboards
+- Authentication & Authorization
 
-```bash
-npm install
-npm run dev            # Start frontend (http://localhost:5173)
-```
-
-### 3. Test API
-
-```bash
-# In another terminal
-npm run validate:schema
-```
+Built using modern development practices, the platform focuses on maintainable architecture, optimized workflows, and real-world scalability.
 
 ---
 
-## 📊 What's New
+# Core Features
 
-### Schema Redesign (Complete)
+## Event Management
+- Create and manage technology events
+- Configure competition categories and rounds
+- Track registrations and participation
 
-✅ Removed legacy tables (`participants`, `judges`, `sponsor_events`, `rounds`)
-✅ Introduced new normalized structure (`registrations`, `judge_assignments`, `sponsorships`, `event_rounds`)
-✅ Updated all backend routes and dashboards
-✅ Created service layer for business logic
-✅ Full documentation and testing guides
+## Participant & Team Management
+- Individual and team registrations
+- Team creation and member management
+- Registration tracking system
 
-### Documentation
+## Judge Evaluation System
+- Judge assignment workflows
+- Score submission & evaluation
+- Event round management
 
-✅ SCHEMA_MIGRATION.md - Complete redesign guide
-✅ BACKEND_API_REFERENCE.md - Full API docs
-✅ FRONTEND_INTEGRATION_GUIDE.md - Frontend update guide
-✅ TESTING_AND_DEPLOYMENT.md - Testing procedures
-✅ PROJECT_OVERVIEW.md - Architecture overview
+## Sponsorship Management
+- Sponsorship tracking
+- Partnership management
+- Contribution monitoring
+
+## Analytics & Dashboards
+- Real-time statistics
+- Role-specific dashboards
+- Performance insights & leaderboards
+
+## Secure Authentication
+- JWT-based authentication
+- Role-Based Access Control (RBAC)
+- Protected API routes
 
 ---
 
-## 🏗️ Technology Stack
+# Tech Stack
 
-**Frontend:**
-
+## Frontend
 - React + TypeScript
 - TanStack Router
 - Tailwind CSS
 - React Query
 - Recharts
 
-**Backend:**
-
-- Node.js + Express
-- MySQL 8.0+
+## Backend
+- Node.js
+- Express.js
+- MySQL 8+
 - JWT Authentication
-- Role-Based Access Control
+- RBAC Authorization
 
 ---
 
-## 📁 Project Structure
+# Architecture Highlights
 
-```
-├── src/                          # Frontend React application
-│   ├── components/              # React components
-│   ├── routes/                  # TanStack Router pages
-│   ├── hooks/                   # Custom hooks (useEvents, useDashboard, etc)
-│   └── lib/                     # Utilities (api.ts, auth.tsx, etc)
-│
-├── backend/                     # Node.js + Express backend
-│   ├── database/               # MySQL schema, procedures, views
-│   ├── routes/                 # API endpoints
-│   ├── middleware/             # Authentication, RBAC
-│   ├── services/               # Business logic (event operations)
-│   ├── scripts/                # Database setup and validation
-│   └── .env                    # Configuration
-│
-└── Documentation/
-    ├── PROJECT_OVERVIEW.md          # Architecture and overview
-    ├── SCHEMA_MIGRATION.md          # Database schema guide
-    ├── BACKEND_API_REFERENCE.md     # API documentation
-    ├── FRONTEND_INTEGRATION_GUIDE.md# Frontend migration
-    └── TESTING_AND_DEPLOYMENT.md    # Testing guide
+- Modular backend architecture
+- Service-layer business logic
+- Scalable relational database design
+- Optimized schema normalization
+- Secure authentication workflow
+- Separation of concerns
+- Production-oriented API structure
+
+---
+
+# Database Modernization
+
+The platform includes a redesigned normalized database structure focused on scalability and maintainability.
+
+### Improvements Introduced
+- Reduced redundancy
+- Better relational integrity
+- Cleaner backend services
+- Optimized database relationships
+- Improved frontend integration support
+
+---
+
+# Getting Started
+
+# Clone Repository
+
+```bash
+git clone https://github.com/your-username/softec-event-management.git
+
+cd softec-event-management
 ```
 
 ---
 
-## 🎯 Key Features
+# Backend Setup
 
-### User Roles
+```bash
+cd backend
 
-- **Admin**: System management and oversight
-- **Organizer**: Create and manage events
-- **Judge**: Evaluate participants and submit scores
-- **Sponsor**: Track sponsorships and contributions
-- **Participant**: Register and compete in events
-
-### Core Functionality
-
-- Event creation and management
-- Participant registration and payment
-- Judge assignment and scoring
-- Sponsorship tracking
-- Real-time leaderboards
-- Role-specific dashboards
-- Accommodation booking
-- Team management
-
----
-
-## 🔧 Configuration
-
-### Backend (.env)
-
+npm install
 ```
+
+## Configure Environment Variables
+
+Create a `.env` file inside the backend directory.
+
+```env
 DB_HOST=localhost
 DB_PORT=3306
-DB_USER=root
+DB_USER=your_username
 DB_PASSWORD=your_password
-DB_NAME=softec_db
+DB_NAME=your_database_name
+
 JWT_SECRET=your_secret_key
+
 PORT=5000
 ```
 
 ---
 
-## 📖 Important Documentation
-
-### For Database/Backend Developers
-
-1. Start with [SCHEMA_MIGRATION.md](SCHEMA_MIGRATION.md) to understand the new schema
-2. Review [BACKEND_API_REFERENCE.md](BACKEND_API_REFERENCE.md) for API endpoints
-3. Check [TESTING_AND_DEPLOYMENT.md](TESTING_AND_DEPLOYMENT.md) for validation
-
-### For Frontend Developers
-
-1. Read [FRONTEND_INTEGRATION_GUIDE.md](FRONTEND_INTEGRATION_GUIDE.md)
-2. Review [BACKEND_API_REFERENCE.md](BACKEND_API_REFERENCE.md) for API payloads
-3. Check example hooks in [FRONTEND_INTEGRATION_GUIDE.md](FRONTEND_INTEGRATION_GUIDE.md)
-
-### For Deployment
-
-1. See [TESTING_AND_DEPLOYMENT.md](TESTING_AND_DEPLOYMENT.md)
-2. Verify with `npm run validate:schema`
-3. Load test data with `backend/database/seed.sql`
-
----
-
-## ✅ Verification Checklist
-
-After setup, verify everything works:
+## Initialize Database
 
 ```bash
-# 1. Backend database
-cd backend
-npm run validate:schema
-
-# 2. Backend server
-npm run dev
-# Should see: "✅ MySQL Connected Successfully"
-
-# 3. Frontend (in another terminal)
-npm run dev
-# Should open http://localhost:5173
+npm run setup:db
 ```
 
 ---
 
-## 🐛 Troubleshooting
+## Start Backend Server
 
-### Database Won't Connect
+```bash
+npm run dev
+```
 
-1. Verify MySQL is running: `mysql -u root -p`
-2. Check .env credentials match your MySQL setup
-3. Ensure database user has CREATE/ALTER permissions
+Backend will run on:
 
-### Schema Validation Fails
-
-1. Run `npm run setup:db` again (will drop and recreate)
-2. Check MySQL error log for specific issues
-3. See [TESTING_AND_DEPLOYMENT.md](TESTING_AND_DEPLOYMENT.md) for detailed troubleshooting
-
-### API Returns 401 Errors
-
-1. Generate JWT token via login endpoint first
-2. Include "Bearer " prefix in Authorization header
-3. Ensure token hasn't expired
+```bash
+http://localhost:5000
+```
 
 ---
 
-## 📞 Support Resources
+# Frontend Setup
 
-- **Database Schema**: [SCHEMA_MIGRATION.md](SCHEMA_MIGRATION.md)
-- **API Endpoints**: [BACKEND_API_REFERENCE.md](BACKEND_API_REFERENCE.md)
-- **Frontend Integration**: [FRONTEND_INTEGRATION_GUIDE.md](FRONTEND_INTEGRATION_GUIDE.md)
-- **Testing Guide**: [TESTING_AND_DEPLOYMENT.md](TESTING_AND_DEPLOYMENT.md)
-- **Full Overview**: [PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md)
+```bash
+npm install
 
----
+npm run dev
+```
 
-## 🚀 Next Steps
+Frontend will run on:
 
-1. ✅ Complete backend setup with `npm run setup:db`
-2. ✅ Validate schema with `npm run validate:schema`
-3. ⏳ Update frontend hooks and components (see [FRONTEND_INTEGRATION_GUIDE.md](FRONTEND_INTEGRATION_GUIDE.md))
-4. ⏳ Test API endpoints (see [BACKEND_API_REFERENCE.md](BACKEND_API_REFERENCE.md))
-5. ⏳ Deploy to production
+```bash
+http://localhost:5173
+```
 
 ---
 
-## 📄 Version History
+# Authentication
 
-### v2.0 (Current - Production Ready)
+Protected routes require JWT authentication.
 
-- ✅ Complete schema redesign
-- ✅ Removed legacy tables
-- ✅ New service layer
-- ✅ Updated all routes and dashboards
-- ✅ Comprehensive documentation
-- ⏳ Frontend integration in progress
-
-### v1.0 (Legacy)
-
-- Legacy schema with participants, judges, sponsor_events
-- Basic API endpoints
-- Initial dashboard implementation
+```http
+Authorization: Bearer <your_token>
+```
 
 ---
+
+# Documentation
+
+| File | Description |
+|---|---|
+| `PROJECT_OVERVIEW.md` | Complete architecture overview |
+| `BACKEND_API_REFERENCE.md` | API documentation |
+| `FRONTEND_INTEGRATION_GUIDE.md` | Frontend integration guide |
+| `TESTING_AND_DEPLOYMENT.md` | Deployment & testing guide |
+
+---
+
+# Validation
+
+## Backend Validation
+
+```bash
+npm run validate:schema
+```
+
+Expected Output:
+
+```bash
+✅ Schema Validation Passed
+✅ Database Connected Successfully
+```
+
+---
+
+# Development Status
+
+## Completed
+- Backend architecture redesign
+- RESTful API implementation
+- Database schema normalization
+- Service-layer integration
+- Authentication & RBAC
+- Documentation ecosystem
+
+## In Progress
+- Frontend integration
+- UI optimization
+- API refinement
+
+## Planned
+- Docker support
+- CI/CD pipelines
+- Real-time notifications
+- Cloud deployment support
+
+---
+
+# Security Notice
+
+Sensitive configurations, environment variables, credentials, and internal implementation details have been excluded from this public repository.
+
+---
+
+# Why This Project Stands Out
+
+- Enterprise-inspired architecture
+- Scalable event management workflows
+- Clean and maintainable backend structure
+- Role-driven access control system
+- Production-ready API ecosystem
+- Real-world system design implementation
+
+---
+
+# License
+
+This project is licensed under the MIT License.
+
+---
+
+<div align="center">
+
+### SOFTEC Event Management System
+
+Built for modern technology events, scalable operations, and seamless digital management.
+
+</div>
